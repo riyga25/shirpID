@@ -6,7 +6,7 @@ import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import org.tensorflow.lite.examples.soundclassifier.databinding.ActivityDownloadBinding
 
-class DownloadActivity  : AppCompatActivity() {
+class DownloadActivity : AppCompatActivity() {
     private var binding: ActivityDownloadBinding? = null
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -16,7 +16,7 @@ class DownloadActivity  : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        if (Downloader.checkModels(this)){
+        if (Downloader.checkModels(this)) {
             // call Main Activity
             binding?.downloadProgress?.setProgress(100)
             binding?.downloadProgress?.setVisibility(View.VISIBLE)

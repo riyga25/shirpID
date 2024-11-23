@@ -17,7 +17,7 @@ import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.navigation.NavigationBarView;
 
 public class SettingsActivity extends AppCompatActivity {
-Context mContext;
+    Context mContext;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -34,12 +34,12 @@ Context mContext;
         navigationView.setOnItemSelectedListener(new NavigationBarView.OnItemSelectedListener() {
             @Override
             public boolean onNavigationItemSelected(@NonNull MenuItem item) {
-                if (item.getItemId()==R.id.action_about){
+                if (item.getItemId() == R.id.action_about) {
                     startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/woheller69/whobird")));
-                } else if (item.getItemId()==R.id.action_mic){
+                } else if (item.getItemId() == R.id.action_mic) {
                     Intent intent = new Intent(mContext, MainActivity.class);
                     startActivity(intent);
-                } else if (item.getItemId()==R.id.action_view){
+                } else if (item.getItemId() == R.id.action_view) {
                     Intent intent = new Intent(mContext, ViewActivity.class);
                     startActivity(intent);
                 }
@@ -55,7 +55,6 @@ Context mContext;
     }
 
 
-
     public static class SettingsFragment extends PreferenceFragmentCompat {
         @Override
         public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
@@ -69,7 +68,7 @@ Context mContext;
                 sharedPreferences.edit().remove("high_pass").apply();
                 sharedPreferences.edit().remove("model_threshold").apply();
 
-                onCreatePreferences(savedInstanceState,rootKey);
+                onCreatePreferences(savedInstanceState, rootKey);
                 return false;
             });
         }

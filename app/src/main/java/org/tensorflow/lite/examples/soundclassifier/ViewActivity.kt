@@ -57,9 +57,11 @@ class ViewActivity : AppCompatActivity() {
             windowManager.defaultDisplay.getMetrics(displayMetrics)
             displayMetrics.widthPixels
         }
-        val paramsWebview: ViewGroup.LayoutParams = binding.webview.getLayoutParams() as ViewGroup.LayoutParams
+        val paramsWebview: ViewGroup.LayoutParams =
+            binding.webview.getLayoutParams() as ViewGroup.LayoutParams
         paramsWebview.height = (width / 1.8f).toInt()
-        val paramsIcon: ViewGroup.LayoutParams = binding.icon.getLayoutParams() as ViewGroup.LayoutParams
+        val paramsIcon: ViewGroup.LayoutParams =
+            binding.icon.getLayoutParams() as ViewGroup.LayoutParams
         paramsIcon.height = (width / 1.8f).toInt()
 
         binding.webview.setWebViewClient(object : MlWebViewClient(this) {})
@@ -75,15 +77,17 @@ class ViewActivity : AppCompatActivity() {
         val isDetailedFilterActive = sharedPref.getBoolean("view_detailed", false)
         binding.checkDetailed.isChecked = isDetailedFilterActive
         binding.checkDetailed.setOnClickListener { view ->
-            val editor=sharedPref.edit()
+            val editor = sharedPref.edit()
             if ((view as CompoundButton).isChecked) {
                 birdObservations.clear()
-                birdObservations.addAll(database.getAllBirdObservations(true).sortedByDescending { it.millis })
+                birdObservations.addAll(
+                    database.getAllBirdObservations(true).sortedByDescending { it.millis })
                 editor.putBoolean("view_detailed", true)
                 editor.apply()
             } else {
                 birdObservations.clear()
-                birdObservations.addAll(database.getAllBirdObservations(false).sortedByDescending { it.millis })
+                birdObservations.addAll(
+                    database.getAllBirdObservations(false).sortedByDescending { it.millis })
                 editor.putBoolean("view_detailed", false)
                 editor.apply()
             }
@@ -96,9 +100,16 @@ class ViewActivity : AppCompatActivity() {
                     intent = Intent(this, MainActivity::class.java)
                     startActivity(intent)
                 }
+
                 R.id.action_about -> {
-                    startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/woheller69/whobird")))
+                    startActivity(
+                        Intent(
+                            Intent.ACTION_VIEW,
+                            Uri.parse("https://github.com/woheller69/whobird")
+                        )
+                    )
                 }
+
                 R.id.action_settings -> {
                     intent = Intent(this, SettingsActivity::class.java)
                     startActivity(intent)
@@ -114,57 +125,72 @@ class ViewActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
 
-        birdObservations = ArrayList(database.getAllBirdObservations(false).sortedByDescending { it.millis } )  //Conversion between Java ArrayList and Kotlin ArrayList
+        birdObservations = ArrayList(
+            database.getAllBirdObservations(false)
+                .sortedByDescending { it.millis })  //Conversion between Java ArrayList and Kotlin ArrayList
 
         adapter = RecyclerOverviewListAdapter(applicationContext, birdObservations)
         binding.recyclerObservations.setAdapter(adapter)
         binding.recyclerObservations.setFocusable(false)
         binding.recyclerObservations.addOnItemTouchListener(
-            RecyclerItemClickListener(baseContext, binding.recyclerObservations, object : RecyclerItemClickListener.OnItemClickListener {
-                override fun onItemClick(view: View?, position: Int) {
+            RecyclerItemClickListener(
+                baseContext,
+                binding.recyclerObservations,
+                object : RecyclerItemClickListener.OnItemClickListener {
+                    override fun onItemClick(view: View?, position: Int) {
 
-                    val url = if ( assetList[adapter.getSpeciesID(position)] != "NO_ASSET") {
-                        "https://macaulaylibrary.org/asset/" + assetList[adapter.getSpeciesID(position)] + "/embed"
-                    } else {
-                        "about:blank"
-                    }
-                    if (url == "about:blank"){
-                        binding.webview.setVisibility(View.GONE)
-                        binding.webview.loadUrl(url)
-                        binding.icon.setVisibility(View.VISIBLE)
-                        binding.webviewUrl.setText("")
-                        binding.webviewUrl.setVisibility(View.GONE)
-                        binding.webviewName.setText("")
-                        binding.webviewName.setVisibility(View.GONE)
-                        binding.webviewLatinname.setText("")
-                        binding.webviewLatinname.setVisibility(View.GONE)
-                        binding.webviewReload.setVisibility(View.GONE)
-                        binding.webviewEbird.setVisibility(View.GONE)
-                        binding.webviewShare.setVisibility(View.GONE)
-                    } else {
-                        if (binding.webviewUrl.toString() != url) {
-                            binding.webview.setVisibility(View.INVISIBLE)
-                            binding.webview.settings.setCacheMode(WebSettings.LOAD_CACHE_ELSE_NETWORK)
-                            binding.webview.loadUrl("javascript:document.open();document.close();") //clear view
+                        val url = if (assetList[adapter.getSpeciesID(position)] != "NO_ASSET") {
+                            "https://macaulaylibrary.org/asset/" + assetList[adapter.getSpeciesID(
+                                position
+                            )] + "/embed"
+                        } else {
+                            "about:blank"
+                        }
+                        if (url == "about:blank") {
+                            binding.webview.setVisibility(View.GONE)
                             binding.webview.loadUrl(url)
-                            binding.webviewUrl.setText(url)
-                            binding.webviewUrl.setVisibility(View.VISIBLE)
-                            binding.webviewName.setText(labelList[adapter.getSpeciesID(position)].split("_").last())
-                            binding.webviewName.setVisibility(View.VISIBLE)
-                            binding.webviewLatinname.setText(labelList[adapter.getSpeciesID(position)].split("_").first())
-                            binding.webviewLatinname.setVisibility(View.VISIBLE)
-                            binding.webviewReload.setVisibility(View.VISIBLE)
-                            binding.webviewEbird.setVisibility(View.VISIBLE)
-                            binding.webviewEbird.setTag(position)
-                            binding.webviewShare.setVisibility(View.VISIBLE)
-                            binding.webviewShare.setTag(position)
-                            binding.icon.setVisibility(View.GONE)
+                            binding.icon.setVisibility(View.VISIBLE)
+                            binding.webviewUrl.setText("")
+                            binding.webviewUrl.setVisibility(View.GONE)
+                            binding.webviewName.setText("")
+                            binding.webviewName.setVisibility(View.GONE)
+                            binding.webviewLatinname.setText("")
+                            binding.webviewLatinname.setVisibility(View.GONE)
+                            binding.webviewReload.setVisibility(View.GONE)
+                            binding.webviewEbird.setVisibility(View.GONE)
+                            binding.webviewShare.setVisibility(View.GONE)
+                        } else {
+                            if (binding.webviewUrl.toString() != url) {
+                                binding.webview.setVisibility(View.INVISIBLE)
+                                binding.webview.settings.setCacheMode(WebSettings.LOAD_CACHE_ELSE_NETWORK)
+                                binding.webview.loadUrl("javascript:document.open();document.close();") //clear view
+                                binding.webview.loadUrl(url)
+                                binding.webviewUrl.setText(url)
+                                binding.webviewUrl.setVisibility(View.VISIBLE)
+                                binding.webviewName.setText(
+                                    labelList[adapter.getSpeciesID(position)].split(
+                                        "_"
+                                    ).last()
+                                )
+                                binding.webviewName.setVisibility(View.VISIBLE)
+                                binding.webviewLatinname.setText(
+                                    labelList[adapter.getSpeciesID(
+                                        position
+                                    )].split("_").first()
+                                )
+                                binding.webviewLatinname.setVisibility(View.VISIBLE)
+                                binding.webviewReload.setVisibility(View.VISIBLE)
+                                binding.webviewEbird.setVisibility(View.VISIBLE)
+                                binding.webviewEbird.setTag(position)
+                                binding.webviewShare.setVisibility(View.VISIBLE)
+                                binding.webviewShare.setTag(position)
+                                binding.icon.setVisibility(View.GONE)
+                            }
                         }
                     }
-                }
 
-                override fun onLongItemClick(view: View?, position: Int) {}
-            })
+                    override fun onLongItemClick(view: View?, position: Int) {}
+                })
         )
     }
 
@@ -209,7 +235,7 @@ class ViewActivity : AppCompatActivity() {
     private fun loadLabels(context: Context) { //TODO: Refactor
         val localeList = context.resources.configuration.locales
         val language = localeList.get(0).language
-        var filename = "labels"+"_${language}.txt"    // TODO: Common definition for all classes
+        var filename = "labels" + "_${language}.txt"    // TODO: Common definition for all classes
 
         //Check if file exists
         val assetManager = context.assets // Replace 'assets' with actual AssetManager instance
@@ -218,12 +244,12 @@ class ViewActivity : AppCompatActivity() {
 
             if (mapList != null) {
                 if (!mapList.contains(filename)) {
-                    filename = "labels"+"_en.txt"
+                    filename = "labels" + "_en.txt"
                 }
             }
         } catch (ex: IOException) {
             ex.printStackTrace()
-            filename = "labels"+"_en.txt"
+            filename = "labels" + "_en.txt"
         }
 
         try {
@@ -276,7 +302,10 @@ class ViewActivity : AppCompatActivity() {
 
         val locationString = adapter.getLocation(position)
 
-        val shareString = dateString + ", " + timeString + ", " + labelList[id].replace("_",", ") + ", " + locationString +"\n\nGet whoBIRD on F-Droid"
+        val shareString = dateString + ", " + timeString + ", " + labelList[id].replace(
+            "_",
+            ", "
+        ) + ", " + locationString + "\n\nGet whoBIRD on F-Droid"
 
         val shareIntent = Intent(Intent.ACTION_SEND)
         shareIntent.type = "text/plain"
@@ -287,7 +316,12 @@ class ViewActivity : AppCompatActivity() {
     fun ebird(view: View) {
         val position = binding.webviewShare.tag as Int
         val id = adapter.getSpeciesID(position)
-        startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://ebird.org/species/"+eBirdList[id])))
+        startActivity(
+            Intent(
+                Intent.ACTION_VIEW,
+                Uri.parse("https://ebird.org/species/" + eBirdList[id])
+            )
+        )
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
@@ -307,13 +341,15 @@ class ViewActivity : AppCompatActivity() {
                 startActivity(Intent.createChooser(intent, ""))
                 return true
             }
+
             R.id.action_delete_db -> {
                 val builder = AlertDialog.Builder(this)
                 builder.setTitle(getString(R.string.delete))
                     .setPositiveButton(this.getString(android.R.string.ok), { _, _ ->
                         val database = BirdDBHelper.getInstance(this)
                         database.clearAllEntries()
-                        Toast.makeText(this, getString(R.string.clear_db),Toast.LENGTH_SHORT).show()
+                        Toast.makeText(this, getString(R.string.clear_db), Toast.LENGTH_SHORT)
+                            .show()
                         birdObservations.clear()
                         adapter.notifyDataSetChanged()
                         binding.webview.setVisibility(View.GONE)
@@ -333,6 +369,7 @@ class ViewActivity : AppCompatActivity() {
                     .create().show()
                 return true
             }
+
             R.id.action_save_db -> {
                 val intent = Intent(Intent.ACTION_CREATE_DOCUMENT)
                 intent.addCategory(Intent.CATEGORY_OPENABLE)
@@ -341,21 +378,24 @@ class ViewActivity : AppCompatActivity() {
                 resultLauncher.launch(intent)
                 return true
             }
+
             else -> return super.onOptionsItemSelected(item)
         }
     }
 
-    var resultLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-        if (result.resultCode == RESULT_OK && result.data != null) {
-            result.data?.data?.let {
-                performBackup(it)
+    var resultLauncher =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            if (result.resultCode == RESULT_OK && result.data != null) {
+                result.data?.data?.let {
+                    performBackup(it)
+                }
             }
         }
-    }
 
     private fun performBackup(uri: Uri) {
         val intData: File = File(
-            Environment.getDataDirectory().toString() + "//data//" + this.packageName + "//databases//"
+            Environment.getDataDirectory()
+                .toString() + "//data//" + this.packageName + "//databases//"
         )
         try {
             val tmpFile = File(cacheDir, "backup.zip")
