@@ -16,18 +16,6 @@
         <activity
             android:name=".MainActivity"
             android:screenOrientation="portrait"
-            android:exported="false">
-        </activity>
-
-        <activity
-            android:name=".ViewActivity"
-            android:screenOrientation="portrait"
-            android:exported="false">
-        </activity>
-
-        <activity
-            android:name=".DownloadActivity"
-            android:screenOrientation="portrait"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -35,11 +23,27 @@
             </intent-filter>
         </activity>
 
-        <activity
-            android:name=".SettingsActivity"
-            android:screenOrientation="portrait"
-            android:exported="false">
-        </activity>
+<!--        <activity-->
+<!--            android:name=".ViewActivity"-->
+<!--            android:screenOrientation="portrait"-->
+<!--            android:exported="false">-->
+<!--        </activity>-->
+
+<!--        <activity-->
+<!--            android:name=".DownloadActivity"-->
+<!--            android:screenOrientation="portrait"-->
+<!--            android:exported="false">-->
+<!--            <intent-filter>-->
+<!--                <action android:name="android.intent.action.MAIN" />-->
+<!--                <category android:name="android.intent.category.LAUNCHER" />-->
+<!--            </intent-filter>-->
+<!--        </activity>-->
+
+<!--        <activity-->
+<!--            android:name=".SettingsActivity"-->
+<!--            android:screenOrientation="portrait"-->
+<!--            android:exported="false">-->
+<!--        </activity>-->
 
     </application>
 

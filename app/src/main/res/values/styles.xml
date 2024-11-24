@@ -1,13 +1,12 @@
 <resources>
     <!-- Base application theme. -->
-    <style name="AppTheme" parent="Theme.MaterialComponents">
+    <style name="AppTheme" parent="Theme.AppCompat.DayNight.NoActionBar">
         <item name="colorPrimary">@color/orange500</item>
         <item name="colorPrimaryDark">@color/gray500</item>
         <item name="colorAccent">@color/orange500</item>
         <item name="colorOnSurface">@color/gray700</item>
         <item name="colorSecondary">@color/gray400</item>
         <item name="colorSurface">@color/gray800</item>
-        <item name="popupMenuBackground">@color/gray800</item>
         <item name="toolbarStyle">@style/Widget.MaterialComponents.Toolbar.Primary</item>
     </style>
 </resources>

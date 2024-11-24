@@ -8,6 +8,7 @@ import android.media.AudioRecord
 import android.media.MediaRecorder
 import android.util.Log
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -16,11 +17,11 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import org.tensorflow.lite.Interpreter
-import java.io.File
 import java.io.IOException
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
 import java.nio.FloatBuffer
-import java.nio.channels.FileChannel
-import java.nio.file.StandardOpenOption
+import java.nio.channels.Channels
 import java.time.LocalDate
 import java.util.Locale
 import kotlin.math.cos
@@ -66,8 +67,6 @@ class SoundClassifier(
     /** Used to record audio samples. */
     private lateinit var audioRecord: AudioRecord
 
-    private var isServiceRunning = false
-
     init {
         loadLabels()
         loadAssetList()
@@ -77,19 +76,19 @@ class SoundClassifier(
     }
 
     fun start() {
-        if (!isServiceRunning) {
-            isServiceRunning = true
+        if (!isRecording.value) {
+            externalScope.launch(Dispatchers.IO) {
+                startAudioRecord()
+            }
             _isRecording.value = true
-            externalScope.launch { startAudioRecord() }
         }
     }
 
     fun stop() {
-        if (!isServiceRunning) return
-        isServiceRunning = false
-        _isRecording.value = false
+        if (!isRecording.value) return
         audioRecord.stop()
         audioRecord.release()
+        _isRecording.value = false
     }
 
     private fun loadLabels() {
@@ -118,12 +117,8 @@ class SoundClassifier(
 
     private fun setupInterpreter() {
         try {
-            val modelFile =
-                File(mContext.getDir("filesdir", Context.MODE_PRIVATE), options.modelPath)
-            val buffer =
-                FileChannel.open(modelFile.toPath(), StandardOpenOption.READ).use { channel ->
-                    channel.map(FileChannel.MapMode.READ_ONLY, 0, channel.size())
-                }
+            val buffer = loadModelFromAssets(mContext, "BirdNET_GLOBAL_6K_V2.4_Model_FP16.tflite")
+
             interpreter = Interpreter(buffer, Interpreter.Options())
 
             val inputShape = interpreter.getInputTensor(0).shape()
@@ -140,12 +135,7 @@ class SoundClassifier(
 
     private fun setupMetaInterpreter() {
         try {
-            val metaModelFile =
-                File(mContext.getDir("filesdir", Context.MODE_PRIVATE), options.metaModelPath)
-            val buffer =
-                FileChannel.open(metaModelFile.toPath(), StandardOpenOption.READ).use { channel ->
-                    channel.map(FileChannel.MapMode.READ_ONLY, 0, channel.size())
-                }
+            val buffer = loadModelFromAssets(mContext, "BirdNET_GLOBAL_6K_V2.4_MData_Model_FP16.tflite")
             metaInterpreter = Interpreter(buffer, Interpreter.Options())
 
             val inputShape = metaInterpreter.getInputTensor(0).shape()
@@ -158,6 +148,17 @@ class SoundClassifier(
         } catch (e: IOException) {
             Log.e(TAG, "Failed to initialize meta-interpreter: ${e.message}")
         }
+    }
+
+    private fun loadModelFromAssets(context: Context, fileName: String): ByteBuffer {
+        val assetManager = context.assets
+        val inputStream = assetManager.open(fileName)
+        val fileSize = inputStream.available()
+        val buffer = ByteBuffer.allocateDirect(fileSize).order(ByteOrder.nativeOrder())
+        val channel = Channels.newChannel(inputStream)
+        channel.read(buffer)
+        buffer.rewind()
+        return buffer
     }
 
     fun runMetaInterpreter(location: Location) {
@@ -221,7 +222,7 @@ class SoundClassifier(
         val circularBuffer = ShortArray(modelInputLength)
         var bufferIndex = 0
 
-        while (externalScope.isActive) {
+        while (externalScope.isActive && _isRecording.value) {
             val recordingBuffer = ShortArray(modelInputLength)
             val samples = audioRecord.read(recordingBuffer, 0, recordingBuffer.size) ?: 0
             if (samples > 0) {
