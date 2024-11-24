@@ -1,45 +1,41 @@
-/*
- * Copyright 2020 The TensorFlow Authors. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-// Modifications by woheller69
-
 package org.tensorflow.lite.examples.soundclassifier
 
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
-import android.os.Build
 import android.os.Bundle
-import android.util.DisplayMetrics
-import android.view.Menu
-import android.view.MenuItem
-import android.view.View
-import android.view.ViewGroup
 import android.view.WindowManager
-import android.webkit.WebSettings
-import android.widget.CompoundButton
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material.Divider
+import androidx.compose.material.Text
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
-import androidx.preference.PreferenceManager
 import kotlinx.coroutines.launch
 import org.tensorflow.lite.examples.soundclassifier.databinding.ActivityMainBinding
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.flow.filter
 
 class MainActivity : AppCompatActivity() {
+
+    companion object {
+        const val REQUEST_PERMISSIONS = 1337
+    }
 
     private lateinit var soundClassifier: SoundClassifier
     private lateinit var binding: ActivityMainBinding
@@ -49,45 +45,28 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        //Set aspect ratio for webview and icon
-        val width = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            val windowMetrics = windowManager.currentWindowMetrics
-            windowMetrics.bounds.width()
-        } else {
-            val displayMetrics = DisplayMetrics()
-            windowManager.defaultDisplay.getMetrics(displayMetrics)
-            displayMetrics.widthPixels
-        }
-        val paramsWebview: ViewGroup.LayoutParams =
-            binding.webview.getLayoutParams() as ViewGroup.LayoutParams
-        paramsWebview.height = (width / 1.8f).toInt()
-        val paramsIcon: ViewGroup.LayoutParams =
-            binding.icon.getLayoutParams() as ViewGroup.LayoutParams
-        paramsIcon.height = (width / 1.8f).toInt()
-
-        soundClassifier = SoundClassifier(this, binding, SoundClassifier.Options())
-        binding.gps.setText(getString(R.string.latitude) + ": --.-- / " + getString(R.string.longitude) + ": --.--")
-        binding.webview.setWebViewClient(object : MlWebViewClient(this) {})
-        binding.webview.settings.setDomStorageEnabled(true)
-        binding.webview.settings.setJavaScriptEnabled(true)
+        soundClassifier = SoundClassifier(
+            context = this,
+            externalScope = lifecycleScope
+        )
 
         binding.fab.setOnClickListener {
-            if (binding.progressHorizontal.isIndeterminate) {
-                binding.progressHorizontal.setIndeterminate(false)
+            if (soundClassifier.isRecording.value) {
                 binding.fab.setImageDrawable(
                     ContextCompat.getDrawable(
                         this,
                         R.drawable.ic_play_24dp
                     )
                 )
+                soundClassifier.stop()
             } else {
-                binding.progressHorizontal.setIndeterminate(true)
                 binding.fab.setImageDrawable(
                     ContextCompat.getDrawable(
                         this,
                         R.drawable.ic_pause_24dp
                     )
                 )
+                soundClassifier.start()
             }
         }
         binding.bottomNavigationView.setOnItemSelectedListener { item ->
@@ -114,40 +93,40 @@ class MainActivity : AppCompatActivity() {
             true
         }
 
-        val sharedPref = PreferenceManager.getDefaultSharedPreferences(this)
-        val isShowImagesActive = sharedPref.getBoolean("main_show_images", false)
-        binding.checkShowImages.isChecked = isShowImagesActive
-        binding.checkShowImages.setOnClickListener { view ->
-            val editor = sharedPref.edit()
-            if ((view as CompoundButton).isChecked) {
-                editor.putBoolean("main_show_images", true)
-                editor.apply()
-            } else {
-                editor.putBoolean("main_show_images", false)
-                editor.apply()
+        binding.composeView.setContent {
+            var birds by remember {
+                mutableStateOf<Set<String>>(emptySet())
+            }
+
+            LaunchedEffect(Unit) {
+                soundClassifier.birdEvents
+                    .filter { it.second * 100 > 30 }
+                    .collect { (bird, _) ->
+                        birds = birds + bird
+                    }
+            }
+
+            LazyColumn(
+                contentPadding = PaddingValues(bottom = 66.dp)
+            ) {
+                items(birds.toList()) { bird ->
+                    Column(Modifier) {
+                        Row(
+                            modifier = Modifier
+                                .fillParentMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(text = bird.substringAfter("_"))
+                        }
+                        Divider()
+                    }
+                }
             }
         }
-
-        val isIgnoreLocationDateActive = sharedPref.getBoolean("main_ignore_meta", false)
-        binding.checkIgnoreMeta.isChecked = isIgnoreLocationDateActive
-        binding.checkIgnoreMeta.setOnClickListener { view ->
-            val editor = sharedPref.edit()
-            if ((view as CompoundButton).isChecked) {
-                editor.putBoolean("main_ignore_meta", true)
-                editor.apply()
-            } else {
-                editor.putBoolean("main_ignore_meta", false)
-                editor.apply()
-            }
-        }
-
-        if (GithubStar.shouldShowStarDialog(this)) GithubStar.starDialog(
-            this,
-            "https://github.com/woheller69/whoBIRD"
-        )
 
         requestPermissions()
-
     }
 
     override fun onResume() {
@@ -180,8 +159,6 @@ class MainActivity : AppCompatActivity() {
         lifecycleScope.launch {
             LocationHelper().stopLocation(this@MainActivity)
         }
-
-        if (soundClassifier.isRecording) soundClassifier.stop()
     }
 
     private fun checkMicrophonePermission(): Boolean {
@@ -225,7 +202,7 @@ class MainActivity : AppCompatActivity() {
             perms.add(Manifest.permission.ACCESS_COARSE_LOCATION)
             perms.add(Manifest.permission.ACCESS_FINE_LOCATION)
         }
-        if (!perms.isEmpty()) requestPermissions(perms.toTypedArray(), REQUEST_PERMISSIONS)
+        if (perms.isNotEmpty()) requestPermissions(perms.toTypedArray(), REQUEST_PERMISSIONS)
     }
 
     private fun keepScreenOn(enable: Boolean) =
@@ -234,35 +211,4 @@ class MainActivity : AppCompatActivity() {
         } else {
             window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         }
-
-    companion object {
-        const val REQUEST_PERMISSIONS = 1337
-    }
-
-    fun reload(view: View) {
-        binding.webview.settings.setCacheMode(WebSettings.LOAD_DEFAULT)
-        binding.webview.loadUrl(binding.webviewUrl.text.toString())
-    }
-
-    override fun onCreateOptionsMenu(menu: Menu): Boolean {
-        val inflater = menuInflater
-        inflater.inflate(R.menu.main, menu)
-        return true
-    }
-
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        when (item.itemId) {
-            R.id.action_share_app -> {
-                val intent = Intent(Intent.ACTION_SEND)
-                val shareBody = "https://f-droid.org/packages/org.woheller69.whobird/"
-                intent.setType("text/plain")
-                intent.putExtra(Intent.EXTRA_TEXT, shareBody)
-                startActivity(Intent.createChooser(intent, ""))
-                return true
-            }
-
-            else -> return super.onOptionsItemSelected(item)
-        }
-    }
-
 }

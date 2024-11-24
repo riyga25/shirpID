@@ -8,13 +8,14 @@ import android.media.AudioRecord
 import android.media.MediaRecorder
 import android.util.Log
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import org.tensorflow.lite.Interpreter
-import org.tensorflow.lite.examples.soundclassifier.databinding.ActivityMainBinding
 import java.io.File
 import java.io.IOException
 import java.nio.FloatBuffer
@@ -26,11 +27,21 @@ import kotlin.math.cos
 
 class SoundClassifier(
     context: Context,
-    private val binding: ActivityMainBinding,
-    private val options: Options = Options()
+    private val options: Options = Options(),
+    private val externalScope: CoroutineScope
 ) {
+
+    companion object {
+        private const val TAG = "SoundClassifier"
+    }
+
     private val mContext = context.applicationContext
-    private val recognitionScope = CoroutineScope(Dispatchers.IO)
+
+    private val _birdEvents = MutableSharedFlow<Pair<String, Float>>(extraBufferCapacity = 1)
+    val birdEvents: SharedFlow<Pair<String, Float>> get() = _birdEvents
+
+    private val _isRecording = MutableStateFlow(false)
+    val isRecording: StateFlow<Boolean> get() = _isRecording
 
     /** Names of the model's output classes.  */
     lateinit var labelList: List<String>
@@ -52,10 +63,10 @@ class SoundClassifier(
     private var metaModelNumClasses = 0
     private var inferenceInterval = 800L
 
-    var isRecording = false
-
     /** Used to record audio samples. */
     private lateinit var audioRecord: AudioRecord
+
+    private var isServiceRunning = false
 
     init {
         loadLabels()
@@ -66,18 +77,19 @@ class SoundClassifier(
     }
 
     fun start() {
-        if (!isRecording) {
-            startAudioRecord()
-            isRecording = true
+        if (!isServiceRunning) {
+            isServiceRunning = true
+            _isRecording.value = true
+            externalScope.launch { startAudioRecord() }
         }
     }
 
     fun stop() {
-        if (isRecording) {
-            recognitionScope.cancel()
-            audioRecord.stop()
-            isRecording = false
-        }
+        if (!isServiceRunning) return
+        isServiceRunning = false
+        _isRecording.value = false
+        audioRecord.stop()
+        audioRecord.release()
     }
 
     private fun loadLabels() {
@@ -106,10 +118,12 @@ class SoundClassifier(
 
     private fun setupInterpreter() {
         try {
-            val modelFile = File(mContext.getDir("filesdir", Context.MODE_PRIVATE), options.modelPath)
-            val buffer = FileChannel.open(modelFile.toPath(), StandardOpenOption.READ).use { channel ->
-                channel.map(FileChannel.MapMode.READ_ONLY, 0, channel.size())
-            }
+            val modelFile =
+                File(mContext.getDir("filesdir", Context.MODE_PRIVATE), options.modelPath)
+            val buffer =
+                FileChannel.open(modelFile.toPath(), StandardOpenOption.READ).use { channel ->
+                    channel.map(FileChannel.MapMode.READ_ONLY, 0, channel.size())
+                }
             interpreter = Interpreter(buffer, Interpreter.Options())
 
             val inputShape = interpreter.getInputTensor(0).shape()
@@ -126,10 +140,12 @@ class SoundClassifier(
 
     private fun setupMetaInterpreter() {
         try {
-            val metaModelFile = File(mContext.getDir("filesdir", Context.MODE_PRIVATE), options.metaModelPath)
-            val buffer = FileChannel.open(metaModelFile.toPath(), StandardOpenOption.READ).use { channel ->
-                channel.map(FileChannel.MapMode.READ_ONLY, 0, channel.size())
-            }
+            val metaModelFile =
+                File(mContext.getDir("filesdir", Context.MODE_PRIVATE), options.metaModelPath)
+            val buffer =
+                FileChannel.open(metaModelFile.toPath(), StandardOpenOption.READ).use { channel ->
+                    channel.map(FileChannel.MapMode.READ_ONLY, 0, channel.size())
+                }
             metaInterpreter = Interpreter(buffer, Interpreter.Options())
 
             val inputShape = metaInterpreter.getInputTensor(0).shape()
@@ -177,7 +193,7 @@ class SoundClassifier(
     }
 
     @SuppressLint("MissingPermission")
-    private fun startAudioRecord() {
+    private suspend fun startAudioRecord() {
         try {
             val bufferSize = maxOf(
                 AudioRecord.getMinBufferSize(
@@ -195,7 +211,7 @@ class SoundClassifier(
                 bufferSize
             )
             audioRecord.startRecording()
-            recognitionScope.launch { startRecognition() }
+            startRecognition()
         } catch (e: Exception) {
             Log.e(TAG, "Error initializing AudioRecord: ${e.message}")
         }
@@ -205,11 +221,12 @@ class SoundClassifier(
         val circularBuffer = ShortArray(modelInputLength)
         var bufferIndex = 0
 
-        while (recognitionScope.isActive) {
+        while (externalScope.isActive) {
             val recordingBuffer = ShortArray(modelInputLength)
             val samples = audioRecord.read(recordingBuffer, 0, recordingBuffer.size) ?: 0
             if (samples > 0) {
-                bufferIndex = updateCircularBuffer(circularBuffer, recordingBuffer, samples, bufferIndex)
+                bufferIndex =
+                    updateCircularBuffer(circularBuffer, recordingBuffer, samples, bufferIndex)
                 val inputBuffer = prepareInputBuffer(circularBuffer, bufferIndex)
                 if (inputBuffer != null) {
                     val outputBuffer = FloatBuffer.allocate(modelNumClasses)
@@ -221,7 +238,12 @@ class SoundClassifier(
         }
     }
 
-    private fun updateCircularBuffer(buffer: ShortArray, data: ShortArray, count: Int, index: Int): Int {
+    private fun updateCircularBuffer(
+        buffer: ShortArray,
+        data: ShortArray,
+        count: Int,
+        index: Int
+    ): Int {
         var currentIndex = index
         for (i in 0 until count) {
             buffer[currentIndex] = data[i]
@@ -245,7 +267,7 @@ class SoundClassifier(
         outputBuffer.rewind()
         outputBuffer.get(predictionProbs)
 
-        val probList = if (binding.checkIgnoreMeta.isChecked) {
+        val probList = if (false) {
             predictionProbs.map { 1 / (1 + kotlin.math.exp(-it)) } // Apply sigmoid
         } else {
             predictionProbs.mapIndexed { i, value ->
@@ -256,8 +278,7 @@ class SoundClassifier(
         val max = probList.withIndex().maxByOrNull { it.value }
 
         max?.let {
-            // TODO push bird index to state
-            Log.i(TAG, "Predictions max: ${labelList[it.index]} / ${"%.2f".format(it.value * 100)}%")
+            externalScope.launch { _birdEvents.emit(labelList[it.index] to it.value) }
         }
     }
 
@@ -282,8 +303,4 @@ class SoundClassifier(
         val metaProbabilityThreshold2: Float = 0.008f,
         val metaProbabilityThreshold3: Float = 0.001f
     )
-
-    companion object {
-        private const val TAG = "SoundClassifier"
-    }
 }
