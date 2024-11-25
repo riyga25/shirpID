@@ -64,39 +64,90 @@ class SoundClassifier(
     private var metaModelNumClasses = 0
     private var inferenceInterval = 800L
 
-    /** Used to record audio samples. */
-    private lateinit var audioRecord: AudioRecord
+    private var audioRecord: AudioRecord? = null
+
+    private val audioLock = Any()
 
     init {
-        loadLabels()
-        loadAssetList()
-        setupInterpreter()
-        setupMetaInterpreter()
-        warmUpModel()
-    }
-
-    fun start() {
-        if (!isRecording.value) {
-            externalScope.launch(Dispatchers.IO) {
-                startAudioRecord()
-            }
-            _isRecording.value = true
+        try {
+            initialize()
+        } catch (e: Exception) {
+            Log.e(TAG, "Initialization failed: ${e.message}")
         }
     }
 
+    fun start() {
+        synchronized(audioLock) {
+            if (_isRecording.value) return
+
+            try {
+                if (audioRecord == null || audioRecord?.state != AudioRecord.STATE_INITIALIZED) {
+                    audioRecord = initializeAudioRecord()
+                }
+                audioRecord?.startRecording()
+
+                externalScope.launch(Dispatchers.IO) {
+                    startRecognition()
+                }
+                _isRecording.value = true
+            } catch (e: Exception) {
+                Log.e(TAG, "Error starting audio record: ${e.message}")
+            }
+        }
+
+    }
+
     fun stop() {
-        if (!isRecording.value) return
-        audioRecord.stop()
-        audioRecord.release()
-        _isRecording.value = false
+        synchronized(audioLock) {
+            if (!_isRecording.value) return
+
+            try {
+                audioRecord?.apply {
+                    if (state == AudioRecord.STATE_INITIALIZED) {
+                        stop()
+                        release()
+                    }
+                }
+                audioRecord = null
+                _isRecording.value = false
+            } catch (e: Exception) {
+                Log.e(TAG, "Error stopping audio record: ${e.message}")
+            }
+        }
+    }
+
+    private fun initialize() {
+        loadLabels()
+        loadAssetList()
+        interpreter = setupInterpreter(options.modelPath, ::onInterpreterReady)
+        metaInterpreter = setupInterpreter(options.metaModelPath, ::onMetaInterpreterReady)
+        warmUpModel()
+    }
+
+    @SuppressLint("MissingPermission")
+    private fun initializeAudioRecord(): AudioRecord {
+        val bufferSize = maxOf(
+            AudioRecord.getMinBufferSize(
+                options.sampleRate,
+                AudioFormat.CHANNEL_IN_MONO,
+                AudioFormat.ENCODING_PCM_16BIT
+            ),
+            options.sampleRate * 2
+        )
+        return AudioRecord(
+            MediaRecorder.AudioSource.UNPROCESSED,
+            options.sampleRate,
+            AudioFormat.CHANNEL_IN_MONO,
+            AudioFormat.ENCODING_PCM_16BIT,
+            bufferSize
+        )
     }
 
     private fun loadLabels() {
         try {
-            val filename = "labels_ru.txt"
-            val labels = mContext.assets.open(filename).bufferedReader().use { it.readLines() }
+            val labels = mContext.assets.open(options.labelsFile).bufferedReader().use { it.readLines() }
             labelList = labels.map { it.trim().capitalize(Locale.ROOT) }
-            Log.i(TAG, "Loaded ${labelList.size} labels from $filename")
+            Log.i(TAG, "Loaded ${labelList.size} labels from ${options.labelsFile}")
         } catch (e: IOException) {
             Log.e(TAG, "Failed to load labels: ${e.message}")
         }
@@ -105,48 +156,12 @@ class SoundClassifier(
     /** Retrieve asset list from "asset_list" file */
     private fun loadAssetList() {
         try {
-            val filename = options.assetFile
-            val assets = mContext.assets.open(filename).bufferedReader().use { it.readLines() }
+            val assets = mContext.assets.open(options.assetFile).bufferedReader().use { it.readLines() }
             assetList = assets.map { it.trim() }
-            Log.i(TAG, "Loaded ${assetList.size} assets from $filename")
+            Log.i(TAG, "Loaded ${assetList.size} assets from ${options.assetFile}")
         } catch (e: IOException) {
             Log.e(TAG, "Failed to load asset list from ${options.assetFile}: ${e.message}")
             assetList = emptyList()
-        }
-    }
-
-    private fun setupInterpreter() {
-        try {
-            val buffer = loadModelFromAssets(mContext, "BirdNET_GLOBAL_6K_V2.4_Model_FP16.tflite")
-
-            interpreter = Interpreter(buffer, Interpreter.Options())
-
-            val inputShape = interpreter.getInputTensor(0).shape()
-            val outputShape = interpreter.getOutputTensor(0).shape()
-            modelInputLength = inputShape[1]
-            modelNumClasses = outputShape[1]
-
-            predictionProbs = FloatArray(modelNumClasses) { Float.NaN }
-            inputBuffer = FloatBuffer.allocate(modelInputLength)
-        } catch (e: IOException) {
-            Log.e(TAG, "Failed to initialize interpreter: ${e.message}")
-        }
-    }
-
-    private fun setupMetaInterpreter() {
-        try {
-            val buffer = loadModelFromAssets(mContext, "BirdNET_GLOBAL_6K_V2.4_MData_Model_FP16.tflite")
-            metaInterpreter = Interpreter(buffer, Interpreter.Options())
-
-            val inputShape = metaInterpreter.getInputTensor(0).shape()
-            val outputShape = metaInterpreter.getOutputTensor(0).shape()
-            metaModelInputLength = inputShape[1]
-            metaModelNumClasses = outputShape[1]
-
-            metaPredictionProbs = FloatArray(metaModelNumClasses) { 1f }
-            metaInputBuffer = FloatBuffer.allocate(metaModelInputLength)
-        } catch (e: IOException) {
-            Log.e(TAG, "Failed to initialize meta-interpreter: ${e.message}")
         }
     }
 
@@ -159,6 +174,49 @@ class SoundClassifier(
         channel.read(buffer)
         buffer.rewind()
         return buffer
+    }
+
+    private fun onInterpreterReady(
+        interpreter: Interpreter,
+        inputShape: IntArray,
+        outputShape: IntArray
+    ) {
+        modelInputLength = inputShape[1]
+        modelNumClasses = outputShape[1]
+        predictionProbs = FloatArray(modelNumClasses) { Float.NaN }
+        inputBuffer = FloatBuffer.allocate(modelInputLength)
+    }
+
+    private fun onMetaInterpreterReady(
+        interpreter: Interpreter,
+        inputShape: IntArray,
+        outputShape: IntArray
+    ) {
+        metaModelInputLength = inputShape[1]
+        metaModelNumClasses = outputShape[1]
+        metaPredictionProbs = FloatArray(metaModelNumClasses) { 1f }
+        metaInputBuffer = FloatBuffer.allocate(metaModelInputLength)
+    }
+
+    private fun setupInterpreter(
+        modelPath: String,
+        onReady: (Interpreter, IntArray, IntArray) -> Unit
+    ): Interpreter {
+        try {
+            val buffer = loadModelFromAssets(mContext, modelPath)
+            val interpreter = Interpreter(buffer, Interpreter.Options())
+
+            val inputShape = interpreter.getInputTensor(0).shape()
+            val outputShape = interpreter.getOutputTensor(0).shape()
+
+            onReady(interpreter, inputShape, outputShape)
+
+            Log.i(TAG, "Interpreter initialized for $modelPath")
+            return interpreter
+        } catch (e: IOException) {
+            Log.e(TAG, "Failed to initialize interpreter for $modelPath: ${e.message}")
+            throw RuntimeException("Interpreter initialization failed")
+        }
     }
 
     fun runMetaInterpreter(location: Location) {
@@ -193,38 +251,13 @@ class SoundClassifier(
         }
     }
 
-    @SuppressLint("MissingPermission")
-    private suspend fun startAudioRecord() {
-        try {
-            val bufferSize = maxOf(
-                AudioRecord.getMinBufferSize(
-                    options.sampleRate,
-                    AudioFormat.CHANNEL_IN_MONO,
-                    AudioFormat.ENCODING_PCM_16BIT
-                ),
-                options.sampleRate * 2
-            )
-            audioRecord = AudioRecord(
-                MediaRecorder.AudioSource.UNPROCESSED,
-                options.sampleRate,
-                AudioFormat.CHANNEL_IN_MONO,
-                AudioFormat.ENCODING_PCM_16BIT,
-                bufferSize
-            )
-            audioRecord.startRecording()
-            startRecognition()
-        } catch (e: Exception) {
-            Log.e(TAG, "Error initializing AudioRecord: ${e.message}")
-        }
-    }
-
     private suspend fun startRecognition() {
         val circularBuffer = ShortArray(modelInputLength)
         var bufferIndex = 0
 
         while (externalScope.isActive && _isRecording.value) {
             val recordingBuffer = ShortArray(modelInputLength)
-            val samples = audioRecord.read(recordingBuffer, 0, recordingBuffer.size) ?: 0
+            val samples = audioRecord?.read(recordingBuffer, 0, recordingBuffer.size) ?: 0
             if (samples > 0) {
                 bufferIndex =
                     updateCircularBuffer(circularBuffer, recordingBuffer, samples, bufferIndex)
@@ -268,7 +301,7 @@ class SoundClassifier(
         outputBuffer.rewind()
         outputBuffer.get(predictionProbs)
 
-        val probList = if (false) {
+        val probList = if (false) { // check location is disabled
             predictionProbs.map { 1 / (1 + kotlin.math.exp(-it)) } // Apply sigmoid
         } else {
             predictionProbs.mapIndexed { i, value ->
@@ -296,9 +329,10 @@ class SoundClassifier(
 
     class Options(
         val assetFile: String = "assets.txt",
-        val modelPath: String = "model.tflite",
-        val metaModelPath: String = "metaModel.tflite",
-        val sampleRate: Int = 48000,
+        val labelsFile: String = "labels_ru.txt",
+        val modelPath: String = "BirdNET_GLOBAL_6K_V2.4_Model_FP16.tflite",
+        val metaModelPath: String = "BirdNET_GLOBAL_6K_V2.4_MData_Model_FP16.tflite",
+        val sampleRate: Int = 48000, // 48 кГц
         val warmupRuns: Int = 3,
         val metaProbabilityThreshold1: Float = 0.01f,
         val metaProbabilityThreshold2: Float = 0.008f,
