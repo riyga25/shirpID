@@ -7,6 +7,9 @@ import android.view.WindowManager
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -24,6 +27,7 @@ import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -35,8 +39,10 @@ import org.tensorflow.lite.examples.soundclassifier.databinding.ActivityMainBind
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.filter
 
 class MainActivity : AppCompatActivity() {
@@ -144,12 +150,24 @@ class MainActivity : AppCompatActivity() {
     private fun setupUI() {
         binding.composeView.setContent {
             var birds by remember { mutableStateOf<Set<String>>(emptySet()) }
+            val highlightedBirds = remember { mutableStateMapOf<String, Boolean>() }
+
             val isRecording by soundClassifier.isRecording.collectAsStateWithLifecycle()
 
             LaunchedEffect(Unit) {
                 soundClassifier.birdEvents
                     .filter { it.second * 100 > 30 }
-                    .collect { (bird, _) -> birds = birds + bird }
+                    .collect { (bird, percent) ->
+                        if (percent * 100 > 30) {
+                            birds = birds + bird
+
+                            // Устанавливаем подсветку для элемента
+                            highlightedBirds[bird] = true
+                            // Убираем подсветку через 1 секунду
+                            delay(1000)
+                            highlightedBirds[bird] = false
+                        }
+                    }
             }
 
             Scaffold(
@@ -179,7 +197,10 @@ class MainActivity : AppCompatActivity() {
                     modifier = Modifier.statusBarsPadding()
                 ) {
                     items(birds.toList()) { bird ->
-                        BirdRow(bird = bird)
+                        BirdRow(
+                            bird = bird,
+                            isHighlighted = highlightedBirds[bird] == true
+                        )
                     }
                 }
             }
@@ -188,16 +209,25 @@ class MainActivity : AppCompatActivity() {
 }
 
 @Composable
-fun BirdRow(bird: String) {
+fun BirdRow(bird: String, isHighlighted: Boolean) {
+    val backgroundColor by animateColorAsState(
+        targetValue = if (isHighlighted) Color.Yellow.copy(alpha = 0.3F) else Color.Transparent,
+        animationSpec = tween(durationMillis = 500)
+    )
+
     Column {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
+                .background(backgroundColor)
                 .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Text(text = bird.substringAfter("_"))
+            Text(
+                text = bird.substringAfter("_"),
+                fontWeight = if (isHighlighted) FontWeight.SemiBold else FontWeight.Normal
+            )
         }
         Divider()
     }
