@@ -1,82 +1,28 @@
 package org.tensorflow.lite.examples.soundclassifier;
 
-import android.Manifest;
 import android.annotation.SuppressLint
 import android.content.Context;
-import android.content.pm.PackageManager;
 import android.location.Location
-import android.location.LocationListener;
-import android.location.LocationManager;
-import android.os.Bundle;
-import androidx.core.app.ActivityCompat;
-import kotlinx.coroutines.suspendCancellableCoroutine
-import kotlin.coroutines.resume
-import kotlin.coroutines.resumeWithException
+import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.Priority
+import kotlinx.coroutines.tasks.await
 
-class LocationHelper {
-    private var locationListener: LocationListener? = null
+class LocationHelper(context: Context) {
+    private val fusedLocationClient: FusedLocationProviderClient = LocationServices
+        .getFusedLocationProviderClient(context)
 
-    suspend fun requestLocation(context: Context, soundClassifier: SoundClassifier) {
-        if (ActivityCompat.checkSelfPermission(
-                context,
-                Manifest.permission.ACCESS_COARSE_LOCATION
-            ) == PackageManager.PERMISSION_GRANTED && checkLocationProvider(context)
-        ) {
-            val locationManager =
-                context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
-
-            try {
-                val location = getLocation(locationManager)
-                soundClassifier.runMetaInterpreter(location)
-            } catch (e: Exception) {
-                e.printStackTrace()
+    @SuppressLint("MissingPermission") // Убедитесь, что вы проверили разрешения перед вызовом этой функции
+    suspend fun getCurrentLocation(): Location? {
+        return try {
+            // Попытка получить последнее известное местоположение
+            fusedLocationClient.lastLocation.await() ?: run {
+                // Если последнее местоположение недоступно, запросите обновленное местоположение
+                fusedLocationClient.getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY, null).await()
             }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
         }
     }
-
-    @SuppressLint("MissingPermission")
-    private suspend fun getLocation(locationManager: LocationManager): Location =
-        suspendCancellableCoroutine { continuation ->
-            locationListener = object : LocationListener {
-                override fun onLocationChanged(location: Location) {
-                    continuation.resume(location)
-                    locationManager.removeUpdates(this)
-                }
-
-                @Deprecated("Deprecated in Java")
-                override fun onStatusChanged(provider: String?, status: Int, extras: Bundle?) {}
-
-                override fun onProviderEnabled(provider: String) {}
-
-                override fun onProviderDisabled(provider: String) {
-                    continuation.resumeWithException(IllegalStateException("Provider disabled"))
-                    locationManager.removeUpdates(this)
-                }
-            }
-
-            locationManager.requestLocationUpdates(
-                LocationManager.GPS_PROVIDER,
-                60000L,
-                0f,
-                locationListener!!
-            )
-
-            continuation.invokeOnCancellation {
-                locationManager.removeUpdates(locationListener!!)
-            }
-        }
-
-    fun stopLocation(context: Context) {
-        val locationManager = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
-        locationListener?.let {
-            locationManager.removeUpdates(it)
-            locationListener = null
-        }
-    }
-
-    private fun checkLocationProvider(context: Context): Boolean {
-        val locationManager = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
-        return locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)
-    }
-
 }

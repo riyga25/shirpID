@@ -65,8 +65,18 @@ class SoundClassifier(
     private var inferenceInterval = 800L
 
     private var audioRecord: AudioRecord? = null
+    private var wavRecorder: WavRecorder? = null
 
     private val audioLock = Any()
+
+    private val bufferSize = maxOf(
+        AudioRecord.getMinBufferSize(
+            options.sampleRate,
+            AudioFormat.CHANNEL_IN_MONO,
+            AudioFormat.ENCODING_PCM_16BIT
+        ),
+        options.sampleRate * 2
+    )
 
     init {
         try {
@@ -84,7 +94,14 @@ class SoundClassifier(
                 if (audioRecord == null || audioRecord?.state != AudioRecord.STATE_INITIALIZED) {
                     audioRecord = initializeAudioRecord()
                 }
+
+                wavRecorder = WavRecorder(
+                    audioRecord = audioRecord!!,
+                    context = mContext
+                )
+
                 audioRecord?.startRecording()
+                wavRecorder?.startRecording()
 
                 externalScope.launch(Dispatchers.IO) {
                     startRecognition()
@@ -97,7 +114,7 @@ class SoundClassifier(
 
     }
 
-    fun stop() {
+    fun stop(saveRecording: Boolean = true) {
         synchronized(audioLock) {
             if (!_isRecording.value) return
 
@@ -110,6 +127,12 @@ class SoundClassifier(
                 }
                 audioRecord = null
                 _isRecording.value = false
+
+                if (saveRecording) {
+                    wavRecorder?.stopRecording()
+                } else {
+                    wavRecorder?.cancelRecording()
+                }
             } catch (e: Exception) {
                 Log.e(TAG, "Error stopping audio record: ${e.message}")
             }
@@ -126,14 +149,6 @@ class SoundClassifier(
 
     @SuppressLint("MissingPermission")
     private fun initializeAudioRecord(): AudioRecord {
-        val bufferSize = maxOf(
-            AudioRecord.getMinBufferSize(
-                options.sampleRate,
-                AudioFormat.CHANNEL_IN_MONO,
-                AudioFormat.ENCODING_PCM_16BIT
-            ),
-            options.sampleRate * 2
-        )
         return AudioRecord(
             MediaRecorder.AudioSource.UNPROCESSED,
             options.sampleRate,
@@ -145,7 +160,8 @@ class SoundClassifier(
 
     private fun loadLabels() {
         try {
-            val labels = mContext.assets.open(options.labelsFile).bufferedReader().use { it.readLines() }
+            val labels =
+                mContext.assets.open(options.labelsFile).bufferedReader().use { it.readLines() }
             labelList = labels.map { it.trim().capitalize(Locale.ROOT) }
             Log.i(TAG, "Loaded ${labelList.size} labels from ${options.labelsFile}")
         } catch (e: IOException) {
@@ -156,7 +172,8 @@ class SoundClassifier(
     /** Retrieve asset list from "asset_list" file */
     private fun loadAssetList() {
         try {
-            val assets = mContext.assets.open(options.assetFile).bufferedReader().use { it.readLines() }
+            val assets =
+                mContext.assets.open(options.assetFile).bufferedReader().use { it.readLines() }
             assetList = assets.map { it.trim() }
             Log.i(TAG, "Loaded ${assetList.size} assets from ${options.assetFile}")
         } catch (e: IOException) {
@@ -259,6 +276,7 @@ class SoundClassifier(
             val recordingBuffer = ShortArray(modelInputLength)
             val samples = audioRecord?.read(recordingBuffer, 0, recordingBuffer.size) ?: 0
             if (samples > 0) {
+                wavRecorder?.writeAudioDataLoop(recordingBuffer, samples)
                 bufferIndex =
                     updateCircularBuffer(circularBuffer, recordingBuffer, samples, bufferIndex)
                 val inputBuffer = prepareInputBuffer(circularBuffer, bufferIndex)
