@@ -1,6 +1,7 @@
 package org.tensorflow.lite.examples.soundclassifier.ui
 
-import androidx.compose.material.MaterialTheme
+import android.location.Location
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -23,23 +24,27 @@ fun ComposeApp() {
         )
     }
     var screenState by remember { mutableStateOf(Screen.START) }
+    var location: Location? by remember { mutableStateOf(null) }
     val locationHelper = remember { LocationHelper(context) }
 
     MainLayout(
         screenState = screenState,
         onStart = {
-            scope.launch {
-                locationHelper.getCurrentLocation()?.let {
-                    soundClassifier.runMetaInterpreter(it)
-                }
-            }
-
             screenState = Screen.PROGRESS
         },
         onRestart = {
             screenState = Screen.START
         },
-        soundClassifier = soundClassifier
+        soundClassifier = soundClassifier,
+        requestLocation = {
+            scope.launch {
+                locationHelper.getCurrentLocation()?.let {
+                    location = it
+                    soundClassifier.runMetaInterpreter(it)
+                }
+            }
+        },
+        location = location
     )
 }
 
@@ -47,17 +52,22 @@ fun ComposeApp() {
 private fun MainLayout(
     screenState: Screen,
     soundClassifier: SoundClassifier,
+    location: Location? = null,
     onStart: () -> Unit,
-    onRestart: () -> Unit
+    onRestart: () -> Unit,
+    requestLocation: () -> Unit = {}
 ) {
     MaterialTheme {
         when (screenState) {
-            Screen.START -> StartScreen {
+            Screen.START -> StartScreen(
+                requestLocation = requestLocation
+            ) {
                 onStart()
             }
 
             Screen.PROGRESS -> ProgressScreen(
-                soundClassifier = soundClassifier
+                soundClassifier = soundClassifier,
+                location = location
             ) {
                 onRestart()
             }
