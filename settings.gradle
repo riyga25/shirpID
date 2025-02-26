@@ -14,5 +14,5 @@ dependencyResolutionManagement {
         mavenCentral()
     }
 }
-rootProject.name = "whoBIRD"
+rootProject.name = "sound_clasifier"
 include ':app'
