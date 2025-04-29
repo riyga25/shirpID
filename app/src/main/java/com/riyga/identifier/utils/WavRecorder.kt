@@ -1,4 +1,4 @@
-package com.riyga.identifier
+package com.riyga.identifier.utils
 
 import android.content.ContentValues
 import android.content.Context
@@ -49,7 +49,10 @@ class WavRecorder(
                 }
 
                 isRecording = true
-                Log.i("WavRecorder", "Recording started. Temporary file: ${temporaryFile?.absolutePath}")
+                Log.i(
+                    "WavRecorder",
+                    "Recording started. Temporary file: ${temporaryFile?.absolutePath}"
+                )
             } catch (e: Exception) {
                 Log.e("WavRecorder", "Error starting recording: ${e.message}")
             }

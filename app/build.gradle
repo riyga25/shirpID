@@ -1,7 +1,8 @@
 plugins {
     id 'com.android.application'
-    id 'kotlin-android'
-    id "org.jetbrains.kotlin.plugin.compose" version "2.0.21"
+    id("kotlin-android")
+    id("kotlinx-serialization")
+    id "org.jetbrains.kotlin.plugin.compose" version "2.1.10"
 }
 
 android {
@@ -28,17 +29,16 @@ android {
     }
 
     buildFeatures {
-        viewBinding true
         compose true
     }
 
     kotlinOptions {
-        jvmTarget = "19"
+        jvmTarget = "21"
     }
 
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_19
-        targetCompatibility JavaVersion.VERSION_19
+        sourceCompatibility JavaVersion.VERSION_21
+        targetCompatibility JavaVersion.VERSION_21
     }
 }
 
@@ -63,4 +63,14 @@ dependencies {
 
     implementation 'com.google.android.gms:play-services-location:21.3.0'
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.10.1")
+
+    def koin = "4.1.0-Beta5"
+    implementation("io.insert-koin:koin-core:$koin")
+    implementation("io.insert-koin:koin-android:$koin")
+    implementation("io.insert-koin:koin-compose:$koin")
+    implementation("io.insert-koin:koin-compose-viewmodel:$koin")
+
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
+    implementation("com.jakewharton.retrofit:retrofit2-kotlinx-serialization-converter:1.0.0")
+    implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
 }

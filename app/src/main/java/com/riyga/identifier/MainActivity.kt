@@ -5,7 +5,7 @@ import android.view.WindowManager
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
-import com.riyga.identifier.ui.ComposeApp
+import com.riyga.identifier.presentation.ui.ComposeApp
 
 class MainActivity : AppCompatActivity() {
 

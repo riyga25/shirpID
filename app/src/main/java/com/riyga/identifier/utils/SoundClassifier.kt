@@ -1,4 +1,4 @@
-package com.riyga.identifier
+package com.riyga.identifier.utils
 
 import android.annotation.SuppressLint
 import android.content.Context

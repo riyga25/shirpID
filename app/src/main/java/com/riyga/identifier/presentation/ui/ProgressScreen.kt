@@ -1,6 +1,5 @@
-package com.riyga.identifier.ui
+package com.riyga.identifier.presentation.ui
 
-import android.location.Location
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -13,9 +12,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -44,20 +44,25 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.riyga.identifier.R
 import kotlinx.coroutines.delay
-import com.riyga.identifier.SoundClassifier
+import com.riyga.identifier.utils.SoundClassifier
+import com.riyga.identifier.utils.toStringLocation
+import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
 fun ProgressScreen(
+    viewModel: IdentifierViewModel = koinViewModel(),
     soundClassifier: SoundClassifier,
-    location: Location? = null,
     onStop: () -> Unit
 ) {
+    val state by viewModel.uiState.collectAsStateWithLifecycle()
     var birds by remember { mutableStateOf<Set<String>>(emptySet()) }
     val highlightedBirds = remember { mutableStateMapOf<String, Boolean>() }
     val haptic = LocalHapticFeedback.current
     var timer = remember { mutableStateOf("00:00.0") }
+    val lazyListState = rememberLazyListState()
 
     LaunchedEffect(Unit) {
         soundClassifier.start()
@@ -96,6 +101,12 @@ fun ProgressScreen(
             }
     }
 
+    LaunchedEffect(birds.size) {
+        if (birds.size > 1) {
+            lazyListState.animateScrollToItem(birds.size - 1)
+        }
+    }
+
     Layout(
         identifiedBirds = birds,
         highlightedBirds = highlightedBirds,
@@ -103,17 +114,21 @@ fun ProgressScreen(
             soundClassifier.stop(it)
             onStop.invoke()
         },
-        location = location,
-        timer = timer
+        location = state.location.toStringLocation(),
+        place = state.locationInfo.toStringLocation(),
+        timer = timer,
+        listState = lazyListState
     )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun Layout(
+    listState: LazyListState,
     identifiedBirds: Set<String>,
     highlightedBirds: Map<String, Boolean>,
-    location: Location? = null,
+    location: String? = null,
+    place: String? = null,
     timer: MutableState<String>,
     onStop: (saveRecord: Boolean) -> Unit
 ) {
@@ -121,10 +136,20 @@ private fun Layout(
         topBar = {
             TopAppBar(
                 title = {
-                    Text(
-                        "Location: ${location?.latitude}, ${location?.longitude}",
-                        style = MaterialTheme.typography.labelSmall
-                    )
+                    Column {
+                        if (place != null) {
+                            Text(
+                                text = place,
+                                style = MaterialTheme.typography.labelMedium
+                            )
+                        }
+                        if (location != null) {
+                            Text(
+                                text = location,
+                                style = MaterialTheme.typography.labelSmall
+                            )
+                        }
+                    }
                 }
             )
         },
@@ -137,8 +162,11 @@ private fun Layout(
         }
     ) { paddings ->
         LazyColumn(
-            contentPadding = PaddingValues(bottom = paddings.calculateBottomPadding()),
-            modifier = Modifier.statusBarsPadding()
+            contentPadding = PaddingValues(
+                bottom = paddings.calculateBottomPadding(),
+                top = paddings.calculateTopPadding()
+            ),
+            state = listState
         ) {
             items(identifiedBirds.toList()) { bird ->
                 BirdRow(

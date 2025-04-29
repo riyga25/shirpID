@@ -1,4 +1,4 @@
-package com.riyga.identifier.ui
+package com.riyga.identifier.presentation.ui
 
 import android.location.Location
 import androidx.compose.material3.MaterialTheme
@@ -10,8 +10,9 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import kotlinx.coroutines.launch
-import com.riyga.identifier.LocationHelper
-import com.riyga.identifier.SoundClassifier
+import com.riyga.identifier.utils.LocationHelper
+import com.riyga.identifier.utils.SoundClassifier
+import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
 fun ComposeApp() {
@@ -24,8 +25,8 @@ fun ComposeApp() {
         )
     }
     var screenState by remember { mutableStateOf(Screen.START) }
-    var location: Location? by remember { mutableStateOf(null) }
     val locationHelper = remember { LocationHelper(context) }
+    val viewModel: IdentifierViewModel = koinViewModel()
 
     MainLayout(
         screenState = screenState,
@@ -38,13 +39,14 @@ fun ComposeApp() {
         soundClassifier = soundClassifier,
         requestLocation = {
             scope.launch {
+                viewModel.startTrackingLocation()
+
+                // TODO delete locationHelper
                 locationHelper.getCurrentLocation()?.let {
-                    location = it
                     soundClassifier.runMetaInterpreter(it)
                 }
             }
-        },
-        location = location
+        }
     )
 }
 
@@ -52,7 +54,6 @@ fun ComposeApp() {
 private fun MainLayout(
     screenState: Screen,
     soundClassifier: SoundClassifier,
-    location: Location? = null,
     onStart: () -> Unit,
     onRestart: () -> Unit,
     requestLocation: () -> Unit = {}
@@ -66,8 +67,7 @@ private fun MainLayout(
             }
 
             Screen.PROGRESS -> ProgressScreen(
-                soundClassifier = soundClassifier,
-                location = location
+                soundClassifier = soundClassifier
             ) {
                 onRestart()
             }
