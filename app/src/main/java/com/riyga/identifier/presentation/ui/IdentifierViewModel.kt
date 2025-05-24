@@ -1,5 +1,6 @@
 package com.riyga.identifier.presentation.ui
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.riyga.identifier.data.location.LocationRepository
@@ -36,11 +37,15 @@ class IdentifierViewModel(
 
     private fun getLocationInfo(location: LocationData) {
         viewModelScope.launch {
-            val locationInfo = geocoderDataSource.getLocationInfo(
-                location.latitude,
-                location.longitude
-            )
-            _uiState.value = _uiState.value.copy(locationInfo = locationInfo)
+            try {
+                val locationInfo = geocoderDataSource.getLocationInfo(
+                    location.latitude,
+                    location.longitude
+                )
+                _uiState.value = _uiState.value.copy(locationInfo = locationInfo)
+            } catch (err: Throwable) {
+                Log.e("APP", err.localizedMessage)
+            }
         }
     }
 }
