@@ -193,45 +193,43 @@ fun RecordingControls(
                 MaterialTheme.colorScheme.surfaceContainer,
                 shape = RoundedCornerShape(12.dp)
             )
-            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .padding(vertical = 8.dp)
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween,
-            modifier = Modifier.fillMaxWidth()
+        TextButton(
+            onClick = onCancel,
+            modifier = Modifier.align(Alignment.CenterStart)
         ) {
-            // Кнопка "Отменить"
-            TextButton(onClick = onCancel) {
-                Text(
-                    text = "Отменить",
-                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-            }
-
-            // Кнопка "Стоп"
-            IconButton(
-                onClick = onStop,
-                modifier = Modifier
-                    .size(48.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.error)
-            ) {
-                Icon(
-                    painter = painterResource(R.drawable.ic_stop),
-                    contentDescription = "Stop Recording",
-                    tint = MaterialTheme.colorScheme.onError,
-                    modifier = Modifier.size(24.dp)
-                )
-            }
-
-            // Таймер
             Text(
-                text = timerValue,
+                text = "Отменить",
                 style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
                 color = MaterialTheme.colorScheme.onSurface
             )
         }
+
+        // Кнопка "Стоп"
+        IconButton(
+            onClick = onStop,
+            modifier = Modifier
+                .size(48.dp)
+                .clip(CircleShape)
+                .background(MaterialTheme.colorScheme.error)
+                .align(Alignment.Center)
+        ) {
+            Icon(
+                painter = painterResource(R.drawable.ic_stop),
+                contentDescription = "Stop Recording",
+                tint = MaterialTheme.colorScheme.onError,
+                modifier = Modifier.size(24.dp)
+            )
+        }
+
+        // Таймер
+        Text(
+            text = timerValue,
+            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.align(Alignment.CenterEnd).padding(end = 12.dp)
+        )
     }
 }
 
