@@ -66,14 +66,14 @@ class GoogleLocationClient(
     }
 
     @SuppressLint("MissingPermission")
-    override suspend fun getCurrentLocation(): LocationData = suspendCancellableCoroutine { cont ->
+    override suspend fun getCurrentLocation(): LocationData? = suspendCancellableCoroutine { cont ->
         fusedLocationClient.getCurrentLocation(
             Priority.PRIORITY_BALANCED_POWER_ACCURACY,
             null
         ).addOnSuccessListener { location ->
             location?.let {
                 cont.resume(it.toLocationData())
-            } ?: cont.resumeWithException(IOException("Null location received"))
+            } ?: cont.resume(null)
         }.addOnFailureListener { e ->
             cont.resumeWithException(e)
         }

@@ -2,9 +2,7 @@ package com.riyga.identifier.presentation.ui
 
 import android.Manifest
 import android.app.Activity
-import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.net.Uri
 import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -36,7 +34,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -56,15 +53,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.riyga.identifier.R
+import com.riyga.identifier.utils.isPermissionGranted
 
 @Composable
 fun StartScreen(
-    requestLocation: () -> Unit = {},
     onStart: () -> Unit = {}
 ) {
     val context = LocalContext.current
@@ -141,12 +137,6 @@ fun StartScreen(
 
         onDispose {
             lifecycle.removeObserver(observer)
-        }
-    }
-
-    LaunchedEffect(isFineLocationGranted) {
-        if (isFineLocationGranted) {
-            requestLocation()
         }
     }
 
@@ -248,16 +238,6 @@ fun StartScreen(
             }
         }
     }
-}
-
-private fun isPermissionGranted(
-    context: Context,
-    permission: String
-): Boolean {
-    return ContextCompat.checkSelfPermission(
-        context,
-        permission
-    ) == PackageManager.PERMISSION_GRANTED
 }
 
 fun Modifier.rippleLoadingAnimationModifier(

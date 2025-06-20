@@ -10,7 +10,7 @@ import kotlinx.coroutines.flow.shareIn
 
 interface LocationRepository {
     val locationUpdates: Flow<LocationData>
-    suspend fun getCurrentLocation(): LocationData
+    suspend fun getCurrentLocation(): LocationData?
     fun startBackgroundUpdates()
     fun stopBackgroundUpdates()
 }
@@ -28,7 +28,7 @@ class LocationRepositoryImpl(
             1
         )
 
-    override suspend fun getCurrentLocation(): LocationData {
+    override suspend fun getCurrentLocation(): LocationData? {
         return locationClient.getCurrentLocation()
     }
 

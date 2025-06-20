@@ -1,17 +1,18 @@
 package com.riyga.identifier.presentation.ui
 
-import android.location.Location
+import android.Manifest
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
-import kotlinx.coroutines.launch
 import com.riyga.identifier.utils.LocationHelper
 import com.riyga.identifier.utils.SoundClassifier
+import com.riyga.identifier.utils.isPermissionGranted
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -28,6 +29,32 @@ fun ComposeApp() {
     val locationHelper = remember { LocationHelper(context) }
     val viewModel: IdentifierViewModel = koinViewModel()
 
+    LaunchedEffect(Unit) {
+        val audio = isPermissionGranted(
+            context,
+            Manifest.permission.RECORD_AUDIO
+        )
+        val location = isPermissionGranted(
+            context,
+            Manifest.permission.ACCESS_FINE_LOCATION
+        )
+
+        if (audio && location) {
+            screenState = Screen.PROGRESS
+        }
+    }
+
+    LaunchedEffect(screenState) {
+        if (screenState == Screen.PROGRESS) {
+            viewModel.startTrackingLocation()
+
+            // TODO delete locationHelper
+            locationHelper.getCurrentLocation()?.let {
+                soundClassifier.runMetaInterpreter(it)
+            }
+        }
+    }
+
     MainLayout(
         screenState = screenState,
         onStart = {
@@ -36,17 +63,7 @@ fun ComposeApp() {
         onRestart = {
             screenState = Screen.START
         },
-        soundClassifier = soundClassifier,
-        requestLocation = {
-            scope.launch {
-                viewModel.startTrackingLocation()
-
-                // TODO delete locationHelper
-                locationHelper.getCurrentLocation()?.let {
-                    soundClassifier.runMetaInterpreter(it)
-                }
-            }
-        }
+        soundClassifier = soundClassifier
     )
 }
 
@@ -55,14 +72,11 @@ private fun MainLayout(
     screenState: Screen,
     soundClassifier: SoundClassifier,
     onStart: () -> Unit,
-    onRestart: () -> Unit,
-    requestLocation: () -> Unit = {}
+    onRestart: () -> Unit
 ) {
     MaterialTheme {
         when (screenState) {
-            Screen.START -> StartScreen(
-                requestLocation = requestLocation
-            ) {
+            Screen.START -> StartScreen{
                 onStart()
             }
 
