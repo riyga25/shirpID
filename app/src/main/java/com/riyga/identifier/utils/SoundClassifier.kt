@@ -27,7 +27,7 @@ import java.util.Locale
 import kotlin.math.cos
 
 class SoundClassifier(
-    context: Context,
+    private val  context: Context,
     private val options: Options = Options(),
     private val externalScope: CoroutineScope
 ) {
@@ -35,8 +35,6 @@ class SoundClassifier(
     companion object {
         private const val TAG = "SoundClassifier"
     }
-
-    private val mContext = context.applicationContext
 
     private val _birdEvents = MutableSharedFlow<Pair<String, Float>>(extraBufferCapacity = 1)
     val birdEvents: SharedFlow<Pair<String, Float>> get() = _birdEvents
@@ -97,7 +95,7 @@ class SoundClassifier(
 
                 wavRecorder = WavRecorder(
                     audioRecord = audioRecord!!,
-                    context = mContext
+                    context = context
                 )
 
                 audioRecord?.startRecording()
@@ -161,7 +159,7 @@ class SoundClassifier(
     private fun loadLabels() {
         try {
             val labels =
-                mContext.assets.open(options.labelsFile).bufferedReader().use { it.readLines() }
+                context.assets.open(options.labelsFile).bufferedReader().use { it.readLines() }
             labelList = labels.map { it.trim().capitalize(Locale.ROOT) }
             Log.i(TAG, "Loaded ${labelList.size} labels from ${options.labelsFile}")
         } catch (e: IOException) {
@@ -173,7 +171,7 @@ class SoundClassifier(
     private fun loadAssetList() {
         try {
             val assets =
-                mContext.assets.open(options.assetFile).bufferedReader().use { it.readLines() }
+                context.assets.open(options.assetFile).bufferedReader().use { it.readLines() }
             assetList = assets.map { it.trim() }
             Log.i(TAG, "Loaded ${assetList.size} assets from ${options.assetFile}")
         } catch (e: IOException) {
@@ -182,15 +180,19 @@ class SoundClassifier(
         }
     }
 
-    private fun loadModelFromAssets(context: Context, fileName: String): ByteBuffer {
-        val assetManager = context.assets
-        val inputStream = assetManager.open(fileName)
-        val fileSize = inputStream.available()
-        val buffer = ByteBuffer.allocateDirect(fileSize).order(ByteOrder.nativeOrder())
-        val channel = Channels.newChannel(inputStream)
-        channel.read(buffer)
-        buffer.rewind()
-        return buffer
+    private fun loadModelFromAssets(fileName: String): ByteBuffer {
+        try {
+            val assetManager = context.assets
+            val inputStream = assetManager.open(fileName)
+            val fileSize = inputStream.available()
+            val buffer = ByteBuffer.allocateDirect(fileSize).order(ByteOrder.nativeOrder())
+            val channel = Channels.newChannel(inputStream)
+            channel.read(buffer)
+            buffer.rewind()
+            return buffer
+        } catch (err: Throwable) {
+            throw err
+        }
     }
 
     private fun onInterpreterReady(
@@ -220,7 +222,7 @@ class SoundClassifier(
         onReady: (Interpreter, IntArray, IntArray) -> Unit
     ): Interpreter {
         try {
-            val buffer = loadModelFromAssets(mContext, modelPath)
+            val buffer = loadModelFromAssets(modelPath)
             val interpreter = Interpreter(buffer, Interpreter.Options())
 
             val inputShape = interpreter.getInputTensor(0).shape()
@@ -236,17 +238,15 @@ class SoundClassifier(
         }
     }
 
-    fun runMetaInterpreter(location: Location) {
-        Log.i(TAG, "Location is: ${location.latitude}/${location.longitude}")
+    fun runMetaInterpreter(latitude: Float, longitude: Float) {
+        Log.i(TAG, "Location is: ${latitude}/${longitude}")
 
         try {
             val dayOfYear = LocalDate.now().dayOfYear
             val weekMeta = cos(Math.toRadians(dayOfYear * 7.5)) + 1.0
-            val lat = location.latitude.toFloat()
-            val lon = location.longitude.toFloat()
 
-            metaInputBuffer.put(0, lat)
-            metaInputBuffer.put(1, lon)
+            metaInputBuffer.put(0, latitude)
+            metaInputBuffer.put(1, longitude)
             metaInputBuffer.put(2, weekMeta.toFloat())
             metaInputBuffer.rewind() // Reset position to beginning of buffer
             val metaOutputBuffer = FloatBuffer.allocate(metaModelNumClasses)

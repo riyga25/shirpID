@@ -4,6 +4,7 @@ import android.Manifest
 import android.app.Activity
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -83,6 +84,19 @@ fun StartScreen(
         )
     }
 
+    var isNotificationsGranted by remember {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            mutableStateOf(
+                isPermissionGranted(
+                    context,
+                    Manifest.permission.POST_NOTIFICATIONS
+                )
+            )
+        } else {
+            mutableStateOf(true)
+        }
+    }
+
     var showSettingsDialog by remember { mutableStateOf(false) }
 
     val permissionLauncher =
@@ -92,6 +106,7 @@ fun StartScreen(
                 when {
                     !isAudioGranted -> isAudioGranted = true
                     !isFineLocationGranted -> isFineLocationGranted = true
+                    !isNotificationsGranted -> isNotificationsGranted = true
                 }
                 showSettingsDialog = false
             } else {
@@ -107,12 +122,17 @@ fun StartScreen(
                         Manifest.permission.ACCESS_FINE_LOCATION
                     )
 
+                    !isNotificationsGranted -> !ActivityCompat.shouldShowRequestPermissionRationale(
+                        context as Activity,
+                        Manifest.permission.POST_NOTIFICATIONS
+                    )
+
                     else -> false
                 }
             }
         }
 
-    val isAllPermissionsGranted = isAudioGranted && isFineLocationGranted
+    val isAllPermissionsGranted = isAudioGranted && isFineLocationGranted && isNotificationsGranted
     val lifecycleOwner = LocalLifecycleOwner.current
 
     // Обновление состояния разрешений при изменении жизненного цикла
@@ -128,6 +148,11 @@ fun StartScreen(
                 isFineLocationGranted = isPermissionGranted(
                     context,
                     Manifest.permission.ACCESS_FINE_LOCATION
+                )
+
+                isNotificationsGranted = isPermissionGranted(
+                    context,
+                    Manifest.permission.POST_NOTIFICATIONS
                 )
             }
         }
@@ -168,6 +193,14 @@ fun StartScreen(
                     onClick = { permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION) }
                 ) {
                     Text(text = "Разрешить доступ к местоположению")
+                }
+            }
+
+            if (!isNotificationsGranted) {
+                OutlinedButton(
+                    onClick = { permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS) }
+                ) {
+                    Text(text = "Разрешить уведомления")
                 }
             }
 

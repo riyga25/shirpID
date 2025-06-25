@@ -15,7 +15,7 @@ import java.util.Date
 import java.util.Locale
 
 private const val APP_NAME = "SoundClassifier"
-private const val FILE_NAME_FORMAT = "dd-MM-yyyy HH_mm_ss"
+private const val FILE_NAME_FORMAT = "yyyy-MM-dd HH_mm_ss"
 
 class WavRecorder(
     private val audioRecord: AudioRecord,

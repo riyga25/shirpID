@@ -25,7 +25,11 @@ class IdentifierViewModel(
     }
     val uiState by lazy { _uiState.asStateFlow() }
 
-    fun startTrackingLocation() {
+    init {
+//        startTrackingLocation()
+    }
+
+    private fun startTrackingLocation() {
         if (locationJob?.isActive == true) return
 
         locationJob = viewModelScope.launch {

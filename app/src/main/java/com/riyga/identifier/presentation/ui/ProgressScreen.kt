@@ -46,26 +46,24 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.riyga.identifier.R
+import com.riyga.identifier.utils.RecognizeService
 import kotlinx.coroutines.delay
-import com.riyga.identifier.utils.SoundClassifier
 import com.riyga.identifier.utils.toStringLocation
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
 fun ProgressScreen(
     viewModel: IdentifierViewModel = koinViewModel(),
-    soundClassifier: SoundClassifier,
-    onStop: () -> Unit
+    onStop: (Boolean) -> Unit
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     var birds by remember { mutableStateOf<Set<String>>(emptySet()) }
     val highlightedBirds = remember { mutableStateMapOf<String, Boolean>() }
     val haptic = LocalHapticFeedback.current
-    var timer = remember { mutableStateOf("00:00.0") }
+    val timer = remember { mutableStateOf("00:00.0") }
     val lazyListState = rememberLazyListState()
 
     LaunchedEffect(Unit) {
-        soundClassifier.start()
 
         val startTime = System.currentTimeMillis()
         while (true) {
@@ -81,7 +79,7 @@ fun ProgressScreen(
     }
 
     LaunchedEffect(Unit) {
-        soundClassifier.birdEvents
+        RecognizeService.birdsEvents
             .collect { (bird, percent) ->
                 if (percent * 100 > 30) {
                     if (bird !in birds) {
@@ -111,8 +109,7 @@ fun ProgressScreen(
         identifiedBirds = birds,
         highlightedBirds = highlightedBirds,
         onStop = {
-            soundClassifier.stop(it)
-            onStop.invoke()
+            onStop.invoke(it)
         },
         location = state.location.toStringLocation(),
         place = state.locationInfo.toStringLocation(),
@@ -219,7 +216,7 @@ fun RecordingControls(
                 painter = painterResource(R.drawable.ic_stop),
                 contentDescription = "Stop Recording",
                 tint = MaterialTheme.colorScheme.onError,
-                modifier = Modifier.size(24.dp)
+                modifier = Modifier.size(30.dp)
             )
         }
 
