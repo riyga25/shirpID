@@ -16,12 +16,7 @@ fun LocationData?.toStringLocation(): String? {
     } else null
 }
 
-fun isPermissionGranted(
-    context: Context,
-    permission: String
-): Boolean {
-    return ContextCompat.checkSelfPermission(
-        context,
-        permission
-    ) == PackageManager.PERMISSION_GRANTED
+// Утилитарная функция для проверки разрешений
+fun isPermissionGranted(context: Context, permission: String): Boolean {
+    return ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED
 }

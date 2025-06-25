@@ -1,44 +1,22 @@
 package com.riyga.identifier.presentation.ui
 
 import android.Manifest
-import android.app.Activity
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.provider.Settings
+import androidx.activity.compose.LocalActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.StartOffset
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
@@ -48,128 +26,72 @@ import androidx.compose.ui.geometry.center
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
-import androidx.core.app.ActivityCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.riyga.identifier.R
-import com.riyga.identifier.utils.isPermissionGranted
+
+// Утилитарная функция для открытия настроек приложения
+fun openAppSettings(context: Context) {
+    Intent(
+        Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+        Uri.fromParts("package", context.packageName, null)
+    ).also {
+        context.startActivity(it)
+    }
+}
 
 @Composable
 fun StartScreen(
-    onStart: () -> Unit = {}
+    onStart: () -> Unit = {},
+    viewModel: StartScreenViewModel = viewModel()
 ) {
     val context = LocalContext.current
+    val activity = LocalActivity.current
 
-    var isAudioGranted by remember {
-        mutableStateOf(
-            isPermissionGranted(
-                context,
-                Manifest.permission.RECORD_AUDIO
-            )
-        )
-    }
+    val uiState by viewModel.uiState.collectAsState()
+    val currentOnStart by rememberUpdatedState(onStart)
 
-    var isFineLocationGranted by remember {
-        mutableStateOf(
-            isPermissionGranted(
-                context,
-                Manifest.permission.ACCESS_FINE_LOCATION
-            )
-        )
-    }
-
-    var isNotificationsGranted by remember {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            mutableStateOf(
-                isPermissionGranted(
-                    context,
-                    Manifest.permission.POST_NOTIFICATIONS
-                )
-            )
-        } else {
-            mutableStateOf(true)
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        activity?.let {
+            viewModel.onPermissionResult(it, isGranted)
         }
     }
 
-    var showSettingsDialog by remember { mutableStateOf(false) }
-
-    val permissionLauncher =
-        rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
-            if (isGranted) {
-                // Обновляем состояние соответствующего разрешения
-                when {
-                    !isAudioGranted -> isAudioGranted = true
-                    !isFineLocationGranted -> isFineLocationGranted = true
-                    !isNotificationsGranted -> isNotificationsGranted = true
+    // Обработка событий от ViewModel
+    LaunchedEffect(key1 = viewModel.eventFlow) {
+        viewModel.eventFlow.collect { event ->
+            when (event) {
+                is StartScreenEvent.RequestPermission -> {
+                    permissionLauncher.launch(event.permission)
                 }
-                showSettingsDialog = false
-            } else {
-                // Проверяем, может ли система снова показать диалог разрешения
-                showSettingsDialog = when {
-                    !isAudioGranted -> !ActivityCompat.shouldShowRequestPermissionRationale(
-                        context as Activity,
-                        Manifest.permission.RECORD_AUDIO
-                    )
-
-                    !isFineLocationGranted -> !ActivityCompat.shouldShowRequestPermissionRationale(
-                        context as Activity,
-                        Manifest.permission.ACCESS_FINE_LOCATION
-                    )
-
-                    !isNotificationsGranted -> !ActivityCompat.shouldShowRequestPermissionRationale(
-                        context as Activity,
-                        Manifest.permission.POST_NOTIFICATIONS
-                    )
-
-                    else -> false
+                is StartScreenEvent.OpenAppSettings -> {
+                    openAppSettings(context)
                 }
             }
         }
+    }
 
-    val isAllPermissionsGranted = isAudioGranted && isFineLocationGranted && isNotificationsGranted
     val lifecycleOwner = LocalLifecycleOwner.current
-
-    // Обновление состояния разрешений при изменении жизненного цикла
-    DisposableEffect(lifecycleOwner) {
+    DisposableEffect(lifecycleOwner, viewModel) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
-                // Проверяем все разрешения, когда экран становится активным
-                isAudioGranted = isPermissionGranted(
-                    context,
-                    Manifest.permission.RECORD_AUDIO
-                )
-
-                isFineLocationGranted = isPermissionGranted(
-                    context,
-                    Manifest.permission.ACCESS_FINE_LOCATION
-                )
-
-                isNotificationsGranted = isPermissionGranted(
-                    context,
-                    Manifest.permission.POST_NOTIFICATIONS
-                )
+                viewModel.refreshPermissionsState()
             }
         }
-
-        val lifecycle = lifecycleOwner.lifecycle
-        lifecycle.addObserver(observer)
-
+        lifecycleOwner.lifecycle.addObserver(observer)
         onDispose {
-            lifecycle.removeObserver(observer)
+            lifecycleOwner.lifecycle.removeObserver(observer)
         }
-    }
-
-    fun openAppSettings() {
-        val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
-            data = Uri.fromParts("package", context.packageName, null)
-        }
-        context.startActivity(intent)
     }
 
     Scaffold { paddings ->
@@ -180,92 +102,126 @@ fun StartScreen(
                 .fillMaxSize()
                 .padding(paddings)
         ) {
-            if (!isAudioGranted) {
-                OutlinedButton(
-                    onClick = { permissionLauncher.launch(Manifest.permission.RECORD_AUDIO) }
-                ) {
-                    Text(text = "Разрешить запись аудио")
-                }
-            }
-
-            if (!isFineLocationGranted) {
-                OutlinedButton(
-                    onClick = { permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION) }
-                ) {
-                    Text(text = "Разрешить доступ к местоположению")
-                }
-            }
-
-            if (!isNotificationsGranted) {
-                OutlinedButton(
-                    onClick = { permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS) }
-                ) {
-                    Text(text = "Разрешить уведомления")
-                }
-            }
-
-            if (isAllPermissionsGranted) {
-                Box(
-                    Modifier.rippleLoadingAnimationModifier(
-                        isActive = true,
-                        color = MaterialTheme.colorScheme.primary,
-                        expandFactor = 5f,
-                    )
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .background(MaterialTheme.colorScheme.primary, CircleShape)
-                            .size(120.dp)
-                            .clip(CircleShape)
-                            .clickable(
-                                role = Role.Button,
-                                onClick = onStart
-                            ),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            painter = painterResource(R.drawable.ic_mic),
-                            contentDescription = "Start record",
-                            tint = MaterialTheme.colorScheme.onPrimary,
-                            modifier = Modifier
-                                .size(64.dp)
-                        )
+            if (!uiState.allPermissionsGranted) {
+                PermissionRequestSection(
+                    uiState = uiState,
+                    onAudioPermissionClick = { viewModel.onPermissionRequested(Manifest.permission.RECORD_AUDIO) },
+                    onLocationPermissionClick = { viewModel.onPermissionRequested(Manifest.permission.ACCESS_FINE_LOCATION) },
+                    onNotificationPermissionClick = {
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                            viewModel.onPermissionRequested(Manifest.permission.POST_NOTIFICATIONS)
+                        }
                     }
-                }
-                Text(
-                    text = "Sound ID",
-                    fontSize = 24.sp,
-                    modifier = Modifier.padding(top = 8.dp),
-                    color = MaterialTheme.colorScheme.onPrimary
                 )
+            } else {
+                MainActionButton(onStart = currentOnStart)
             }
         }
     }
 
-    if (showSettingsDialog) {
-        Dialog(
-            onDismissRequest = { showSettingsDialog = false }
+    if (uiState.showSettingsDialog) {
+        SettingsRedirectDialog(
+            onDismiss = { viewModel.dismissSettingsDialog() },
+            onConfirm = { viewModel.requestOpenAppSettings() }
+        )
+    }
+}
+
+@Composable
+fun PermissionRequestSection(
+    uiState: PermissionState,
+    onAudioPermissionClick: () -> Unit,
+    onLocationPermissionClick: () -> Unit,
+    onNotificationPermissionClick: () -> Unit
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        if (!uiState.isAudioGranted) {
+            OutlinedButton(onClick = onAudioPermissionClick) {
+                Text(text = stringResource(R.string.permission_audio_request))
+            }
+        }
+        if (!uiState.isFineLocationGranted) {
+            OutlinedButton(onClick = onLocationPermissionClick) {
+                Text(text = stringResource(R.string.permission_location_request))
+            }
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && !uiState.isNotificationsGranted) {
+            OutlinedButton(onClick = onNotificationPermissionClick) {
+                Text(text = stringResource(R.string.permission_notification_request))
+            }
+        }
+    }
+}
+
+@Composable
+fun MainActionButton(onStart: () -> Unit) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Box(
+            Modifier.rippleLoadingAnimationModifier(
+                isActive = true, // Это состояние может также управляться извне, если нужно
+                color = MaterialTheme.colorScheme.primary,
+                expandFactor = 5f,
+            )
+        ) {
+            Box(
+                modifier = Modifier
+                    .background(MaterialTheme.colorScheme.primary, CircleShape)
+                    .size(120.dp)
+                    .clip(CircleShape)
+                    .clickable(
+                        role = Role.Button,
+                        onClick = onStart
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    painter = painterResource(R.drawable.ic_mic),
+                    contentDescription = stringResource(R.string.start_record_desc),
+                    tint = MaterialTheme.colorScheme.onPrimary,
+                    modifier = Modifier.size(64.dp)
+                )
+            }
+        }
+        Text(
+            text = stringResource(R.string.sound_id_title),
+            fontSize = 24.sp,
+            modifier = Modifier.padding(top = 16.dp),
+            color = MaterialTheme.colorScheme.onBackground
+        )
+    }
+}
+
+@Composable
+fun SettingsRedirectDialog(onDismiss: () -> Unit, onConfirm: () -> Unit) {
+    Dialog(onDismissRequest = onDismiss) {
+        Card(
+            shape = RoundedCornerShape(16.dp),
+            modifier = Modifier.padding(16.dp)
         ) {
             Column(
                 modifier = Modifier
-                    .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(16.dp))
-                    .padding(16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+                    .padding(all = 24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                Text("Открыть настройки приложения для управления разрешениями?")
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceAround) {
-                    TextButton(
-                        onClick = { showSettingsDialog = false }
-                    ) {
-                        Text("Отмена")
+                Text(
+                    text = stringResource(R.string.permission_settings_dialog_title),
+                    style = MaterialTheme.typography.titleLarge
+                )
+                Text(stringResource(R.string.permission_settings_dialog_message))
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    TextButton(onClick = onDismiss) {
+                        Text(stringResource(R.string.cancel))
                     }
-                    TextButton(
-                        onClick = {
-                            openAppSettings()
-                            showSettingsDialog = false
-                        }
-                    ) {
-                        Text("Перейти")
+                    Spacer(modifier = Modifier.width(8.dp))
+                    TextButton(onClick = onConfirm) {
+                        Text(stringResource(R.string.go_to_settings))
                     }
                 }
             }
@@ -283,7 +239,7 @@ fun Modifier.rippleLoadingAnimationModifier(
     if (!isActive) return this
 
     return composed {
-        val transition = rememberInfiniteTransition(label = "ripple")
+        val transition = rememberInfiniteTransition(label = "ripple_transition")
 
         val translateAnimations = List(circles) { index ->
             transition.animateFloat(
@@ -297,7 +253,7 @@ fun Modifier.rippleLoadingAnimationModifier(
                     repeatMode = RepeatMode.Restart,
                     initialStartOffset = StartOffset(index * (durationMillis / circles))
                 ),
-                label = "rippleCircle$index"
+                label = "ripple_circle_$index"
             )
         }
 
@@ -306,7 +262,7 @@ fun Modifier.rippleLoadingAnimationModifier(
             translateAnimations.forEach { animatable ->
                 val alpha = 1f - animatable.value
                 drawCircle(
-                    color = color.copy(alpha = alpha),
+                    color = color.copy(alpha = alpha.coerceIn(0f, 1f)), // Убедимся, что alpha в границах
                     radius = maxRadius * animatable.value,
                     center = size.center
                 )
@@ -315,8 +271,10 @@ fun Modifier.rippleLoadingAnimationModifier(
     }
 }
 
-@Preview
+@Preview(showBackground = true)
 @Composable
-private fun Preview() {
-    StartScreen() {}
+private fun PreviewSettingsRedirectDialog() {
+    MaterialTheme {
+        SettingsRedirectDialog(onDismiss = {}, onConfirm = {})
+    }
 }
