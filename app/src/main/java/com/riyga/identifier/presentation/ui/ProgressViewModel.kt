@@ -7,16 +7,14 @@ import com.riyga.identifier.data.location.LocationRepository
 import com.riyga.identifier.data.models.LocationData
 import com.riyga.identifier.data.network.GeocoderDataSource
 import com.riyga.identifier.presentation.models.LocationInfo
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-class IdentifierViewModel(
+class ProgressViewModel(
     private val geocoderDataSource: GeocoderDataSource,
     private val locationRepository: LocationRepository
 ) : ViewModel() {
-    var locationJob: Job? = null
 
     private val _uiState: MutableStateFlow<IdentifierState> by lazy {
         MutableStateFlow(
@@ -26,21 +24,17 @@ class IdentifierViewModel(
     val uiState by lazy { _uiState.asStateFlow() }
 
     init {
-//        startTrackingLocation()
+        fetchLocation()
     }
 
-    private fun startTrackingLocation() {
-        if (locationJob?.isActive == true) return
+    private fun fetchLocation() {
+        viewModelScope.launch {
+            val loc = locationRepository.getCurrentLocation()
 
-        locationJob = viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(location = locationRepository.getCurrentLocation())
+            _uiState.value = _uiState.value.copy(location = loc)
 
-            locationRepository.locationUpdates.collect {
-                if (uiState.value.locationInfo == null) {
-                    getLocationInfo(it)
-                }
-
-                _uiState.value = _uiState.value.copy(location = it)
+            if (loc != null) {
+                getLocationInfo(loc)
             }
         }
     }

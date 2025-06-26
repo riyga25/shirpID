@@ -35,8 +35,8 @@ import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.riyga.identifier.R
+import org.koin.compose.viewmodel.koinViewModel
 
 // Утилитарная функция для открытия настроек приложения
 fun openAppSettings(context: Context) {
@@ -51,10 +51,11 @@ fun openAppSettings(context: Context) {
 @Composable
 fun StartScreen(
     onStart: () -> Unit = {},
-    viewModel: StartScreenViewModel = viewModel()
+    viewModel: StartScreenViewModel = koinViewModel()
 ) {
     val context = LocalContext.current
     val activity = LocalActivity.current
+    val lifecycleOwner = LocalLifecycleOwner.current
 
     val uiState by viewModel.uiState.collectAsState()
     val currentOnStart by rememberUpdatedState(onStart)
@@ -67,6 +68,12 @@ fun StartScreen(
         }
     }
 
+    LaunchedEffect(uiState.isFineLocationGranted) {
+        if (uiState.isFineLocationGranted) {
+            viewModel.fetchLocationAndProceed()
+        }
+    }
+
     // Обработка событий от ViewModel
     LaunchedEffect(key1 = viewModel.eventFlow) {
         viewModel.eventFlow.collect { event ->
@@ -74,6 +81,7 @@ fun StartScreen(
                 is StartScreenEvent.RequestPermission -> {
                     permissionLauncher.launch(event.permission)
                 }
+
                 is StartScreenEvent.OpenAppSettings -> {
                     openAppSettings(context)
                 }
@@ -81,7 +89,6 @@ fun StartScreen(
         }
     }
 
-    val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner, viewModel) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
@@ -95,26 +102,47 @@ fun StartScreen(
     }
 
     Scaffold { paddings ->
-        Column(
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddings)
+        Box(modifier = Modifier
+            .padding(paddings)
+            .fillMaxSize()
         ) {
-            if (!uiState.allPermissionsGranted) {
-                PermissionRequestSection(
-                    uiState = uiState,
-                    onAudioPermissionClick = { viewModel.onPermissionRequested(Manifest.permission.RECORD_AUDIO) },
-                    onLocationPermissionClick = { viewModel.onPermissionRequested(Manifest.permission.ACCESS_FINE_LOCATION) },
-                    onNotificationPermissionClick = {
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                            viewModel.onPermissionRequested(Manifest.permission.POST_NOTIFICATIONS)
-                        }
+            Column(
+                modifier = Modifier.align(Alignment.TopCenter).fillMaxWidth().padding(top = 16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                if (uiState.isLoadingLocation) {
+                    CircularProgressIndicator()
+                } else if (uiState.locationError != null) {
+                    Text("Error: ${uiState.locationError}", color = MaterialTheme.colorScheme.error)
+                    Button(onClick = { viewModel.fetchLocationAndProceed() }) {
+                        Text("Try Again")
                     }
-                )
-            } else {
-                MainActionButton(onStart = currentOnStart)
+                } else {
+                    uiState.currentLocation?.let {
+                        Text("Coordinates: ${it.latitude}, ${it.longitude}")
+                    }
+                }
+            }
+
+            Column(
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.align(Alignment.Center)
+            ) {
+                if (!uiState.allPermissionsGranted) {
+                    PermissionRequestSection(
+                        uiState = uiState,
+                        onAudioPermissionClick = { viewModel.onPermissionRequested(Manifest.permission.RECORD_AUDIO) },
+                        onLocationPermissionClick = { viewModel.onPermissionRequested(Manifest.permission.ACCESS_FINE_LOCATION) },
+                        onNotificationPermissionClick = {
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                viewModel.onPermissionRequested(Manifest.permission.POST_NOTIFICATIONS)
+                            }
+                        }
+                    )
+                } else if (!uiState.isLoadingLocation && uiState.locationError == null) {
+                    MainActionButton(onStart = onStart)
+                }
             }
         }
     }
@@ -262,7 +290,12 @@ fun Modifier.rippleLoadingAnimationModifier(
             translateAnimations.forEach { animatable ->
                 val alpha = 1f - animatable.value
                 drawCircle(
-                    color = color.copy(alpha = alpha.coerceIn(0f, 1f)), // Убедимся, что alpha в границах
+                    color = color.copy(
+                        alpha = alpha.coerceIn(
+                            0f,
+                            1f
+                        )
+                    ), // Убедимся, что alpha в границах
                     radius = maxRadius * animatable.value,
                     center = size.center
                 )

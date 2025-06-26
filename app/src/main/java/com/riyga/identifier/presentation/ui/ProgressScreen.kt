@@ -53,7 +53,7 @@ import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
 fun ProgressScreen(
-    viewModel: IdentifierViewModel = koinViewModel(),
+    viewModel: ProgressViewModel = koinViewModel(),
     onStop: (Boolean) -> Unit
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()

@@ -1,8 +1,6 @@
 package com.riyga.identifier.di
 
 import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
-import com.riyga.identifier.data.location.GoogleLocationClient
-import com.riyga.identifier.data.location.LocationClient
 import com.riyga.identifier.data.location.LocationRepository
 import com.riyga.identifier.data.location.LocationRepositoryImpl
 import com.riyga.identifier.data.network.GeocoderApiService
@@ -18,7 +16,6 @@ import retrofit2.Retrofit
 val dataModule = module {
     single { provideGeocoderApi() }
     single<GeocoderDataSource> { GeocoderDataSourceImpl(get()) }
-    single<LocationClient> { GoogleLocationClient(get()) }
     single<LocationRepository> { LocationRepositoryImpl(get()) }
 }
 
