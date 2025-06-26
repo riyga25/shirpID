@@ -36,6 +36,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.riyga.identifier.R
+import com.riyga.identifier.data.models.LocationData
 import org.koin.compose.viewmodel.koinViewModel
 
 // Утилитарная функция для открытия настроек приложения
@@ -50,15 +51,13 @@ fun openAppSettings(context: Context) {
 
 @Composable
 fun StartScreen(
-    onStart: () -> Unit = {},
+    onStart: (location: LocationData) -> Unit = {},
     viewModel: StartScreenViewModel = koinViewModel()
 ) {
     val context = LocalContext.current
     val activity = LocalActivity.current
     val lifecycleOwner = LocalLifecycleOwner.current
-
     val uiState by viewModel.uiState.collectAsState()
-    val currentOnStart by rememberUpdatedState(onStart)
 
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
@@ -75,7 +74,7 @@ fun StartScreen(
     }
 
     // Обработка событий от ViewModel
-    LaunchedEffect(key1 = viewModel.eventFlow) {
+    LaunchedEffect(viewModel.eventFlow) {
         viewModel.eventFlow.collect { event ->
             when (event) {
                 is StartScreenEvent.RequestPermission -> {
@@ -102,12 +101,16 @@ fun StartScreen(
     }
 
     Scaffold { paddings ->
-        Box(modifier = Modifier
-            .padding(paddings)
-            .fillMaxSize()
+        Box(
+            modifier = Modifier
+                .padding(paddings)
+                .fillMaxSize()
         ) {
             Column(
-                modifier = Modifier.align(Alignment.TopCenter).fillMaxWidth().padding(top = 16.dp),
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .fillMaxWidth()
+                    .padding(top = 16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 if (uiState.isLoadingLocation) {
@@ -119,7 +122,7 @@ fun StartScreen(
                     }
                 } else {
                     uiState.currentLocation?.let {
-                        Text("Coordinates: ${it.latitude}, ${it.longitude}")
+                        Text("${it.latitude}, ${it.longitude}")
                     }
                 }
             }
@@ -132,8 +135,12 @@ fun StartScreen(
                 if (!uiState.allPermissionsGranted) {
                     PermissionRequestSection(
                         uiState = uiState,
-                        onAudioPermissionClick = { viewModel.onPermissionRequested(Manifest.permission.RECORD_AUDIO) },
-                        onLocationPermissionClick = { viewModel.onPermissionRequested(Manifest.permission.ACCESS_FINE_LOCATION) },
+                        onAudioPermissionClick = {
+                            viewModel.onPermissionRequested(Manifest.permission.RECORD_AUDIO)
+                        },
+                        onLocationPermissionClick = {
+                            viewModel.onPermissionRequested(Manifest.permission.ACCESS_FINE_LOCATION)
+                        },
                         onNotificationPermissionClick = {
                             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                                 viewModel.onPermissionRequested(Manifest.permission.POST_NOTIFICATIONS)
@@ -141,7 +148,9 @@ fun StartScreen(
                         }
                     )
                 } else if (!uiState.isLoadingLocation && uiState.locationError == null) {
-                    MainActionButton(onStart = onStart)
+                    MainActionButton(
+                        onStart = { uiState.currentLocation?.let { onStart.invoke(it) } }
+                    )
                 }
             }
         }

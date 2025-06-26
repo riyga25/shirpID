@@ -34,7 +34,7 @@ class RecognizeService: Service() {
     private val job = SupervisorJob()
     private val scope = CoroutineScope(Dispatchers.IO + job)
 
-    private lateinit var soundClassifier: SoundClassifier
+    private var soundClassifier: SoundClassifier? = null
 
     inner class LocalBinder : Binder() {
         fun getService(): RecognizeService {
@@ -46,34 +46,34 @@ class RecognizeService: Service() {
 
     override fun onDestroy() {
         super.onDestroy()
-        soundClassifier.stop(false)
+        soundClassifier?.stop(false)
     }
 
     fun stop(saveRecording: Boolean) {
-        soundClassifier.stop(saveRecording)
+        soundClassifier?.stop(saveRecording)
         stopForeground(STOP_FOREGROUND_REMOVE)
         stopSelf()
     }
 
     fun startForegroundService(latitude: Float, longitude: Float) {
-        soundClassifier = SoundClassifier(
-            context = this,
-            externalScope = scope
-        )
-
-        createNotificationChannel()
-
-        val notification = createNotification("Listening birds...")
-        startForeground(1, notification)
-
-        soundClassifier.runMetaInterpreter(
-            longitude = longitude,
-            latitude = latitude
-        )
-        soundClassifier.start()
-
         scope.launch {
-            soundClassifier.birdEvents.collect {
+            soundClassifier = SoundClassifier(
+                context = this@RecognizeService,
+                externalScope = scope
+            )
+
+            createNotificationChannel()
+
+            val notification = createNotification("Listening birds...")
+            startForeground(1, notification)
+
+            soundClassifier?.runMetaInterpreter(
+                longitude = longitude,
+                latitude = latitude
+            )
+            soundClassifier?.start()
+
+            soundClassifier?.birdEvents?.collect {
                 _birdsEvents.emit(it)
             }
         }

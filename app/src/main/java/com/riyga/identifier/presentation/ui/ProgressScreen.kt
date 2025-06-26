@@ -1,5 +1,10 @@
 package com.riyga.identifier.presentation.ui
 
+import android.content.ComponentName
+import android.content.Context
+import android.content.Intent
+import android.content.ServiceConnection
+import android.os.IBinder
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -28,88 +33,136 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.riyga.identifier.R
+import com.riyga.identifier.data.models.LocationData
+import com.riyga.identifier.utils.LocalNavController
 import com.riyga.identifier.utils.RecognizeService
 import kotlinx.coroutines.delay
 import com.riyga.identifier.utils.toStringLocation
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
 fun ProgressScreen(
-    viewModel: ProgressViewModel = koinViewModel(),
-    onStop: (Boolean) -> Unit
+    location: LocationData,
+    viewModel: ProgressViewModel = koinViewModel()
 ) {
+    val context = LocalContext.current
+    val navController = LocalNavController.current
     val state by viewModel.uiState.collectAsStateWithLifecycle()
-    var birds by remember { mutableStateOf<Set<String>>(emptySet()) }
+    var identifiedBirds by remember { mutableStateOf<Set<String>>(emptySet()) }
     val highlightedBirds = remember { mutableStateMapOf<String, Boolean>() }
     val haptic = LocalHapticFeedback.current
     val timer = remember { mutableStateOf("00:00.0") }
     val lazyListState = rememberLazyListState()
 
-    LaunchedEffect(Unit) {
+    var service: RecognizeService? by remember { mutableStateOf(null) }
+    var isBound by remember { mutableStateOf(false) }
+    val connection = remember {
+        object : ServiceConnection {
+            override fun onServiceConnected(name: ComponentName, binder: IBinder) {
+                val localBinder = binder as RecognizeService.LocalBinder
+                service = localBinder.getService()
+                isBound = true
+                // Как только сервис привязан, запускаем его с координатами
+                service?.startForegroundService(
+                    location.latitude.toFloat(),
+                    location.longitude.toFloat()
+                )
+            }
 
-        val startTime = System.currentTimeMillis()
-        while (true) {
-            val elapsed = System.currentTimeMillis() - startTime
-            timer.value = String.format(
-                "%02d:%02d.%d",
-                (elapsed / 1000) / 60,
-                (elapsed / 1000) % 60,
-                (elapsed % 1000) / 100
-            )
-            delay(100) // Обновление каждые 100 мс
+            override fun onServiceDisconnected(name: ComponentName) {
+                service = null
+                isBound = false
+            }
         }
     }
 
-    LaunchedEffect(Unit) {
-        RecognizeService.birdsEvents
-            .collect { (bird, percent) ->
-                if (percent * 100 > 30) {
-                    if (bird !in birds) {
-                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                    }
-
-                    birds = birds + bird
-
-                    // Устанавливаем подсветку для элемента
-                    highlightedBirds[bird] = true
-                    // Убираем подсветку через 1 секунду
-                    delay(1000)
-                    highlightedBirds[bird] = false
-                } else {
-                    println("less than 30% -> $percent = $bird")
-                }
+    // Привязка/отвязка сервиса при входе/выходе с экрана
+    DisposableEffect(Unit) {
+        Intent(context, RecognizeService::class.java).also { intent ->
+            context.bindService(intent, connection, Context.BIND_AUTO_CREATE)
+        }
+        onDispose {
+            if (isBound) {
+                context.unbindService(connection)
+                isBound = false // Убедимся, что состояние обновлено
             }
+        }
     }
 
-    LaunchedEffect(birds.size) {
-        if (birds.size > 1) {
-            lazyListState.animateScrollToItem(birds.size - 1)
+    // Запуск таймера
+    LaunchedEffect(isBound) { // Перезапускаем таймер, если сервис привязан (или по др. условию)
+        if (isBound) { // Начинаем таймер, только когда сервис активен
+            val startTime = System.currentTimeMillis()
+            while (this.isActive) { // isActive из корутины
+                val elapsed = System.currentTimeMillis() - startTime
+                timer.value = String.format(
+                    "%02d:%02d.%d",
+                    (elapsed / 1000) / 60,
+                    (elapsed / 1000) % 60,
+                    (elapsed % 1000) / 100
+                )
+                delay(100)
+            }
+        } else {
+            timer.value = "00:00.0" // Сброс таймера, если сервис не активен
+        }
+    }
+
+    // Сбор событий от сервиса
+    LaunchedEffect(isBound) { // Перезапускаем сборщик, если меняется состояние isBound
+        if (isBound) {
+            RecognizeService.birdsEvents.collect { (bird, percent) ->
+                if (percent * 100 > 30) {
+                    if (bird !in identifiedBirds) {
+                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                        identifiedBirds = identifiedBirds + bird
+                    }
+                    highlightedBirds[bird] = true
+                    delay(1000) // Эта задержка здесь ок для UI эффекта
+                    highlightedBirds[bird] = false
+                } else {
+                    println("ProgressScreen: less than 30% -> $percent = $bird")
+                }
+            }
+        }
+    }
+
+    LaunchedEffect(identifiedBirds.size) {
+        if (identifiedBirds.size > 1) {
+            lazyListState.animateScrollToItem(identifiedBirds.size - 1)
         }
     }
 
     Layout(
-        identifiedBirds = birds,
+        identifiedBirds = identifiedBirds,
         highlightedBirds = highlightedBirds,
         onStop = {
-            onStop.invoke(it)
+            service?.stop(it)
+            navController.navigateUp()
         },
         location = state.location.toStringLocation(),
         place = state.locationInfo.toStringLocation(),
@@ -134,9 +187,9 @@ private fun Layout(
             TopAppBar(
                 title = {
                     Column {
-                        if (place != null) {
+                        if (place.isNullOrEmpty().not()) {
                             Text(
-                                text = place,
+                                text = place ?: "",
                                 style = MaterialTheme.typography.labelMedium
                             )
                         }
@@ -225,7 +278,9 @@ fun RecordingControls(
             text = timerValue,
             style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
             color = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.align(Alignment.CenterEnd).padding(end = 12.dp)
+            modifier = Modifier
+                .align(Alignment.CenterEnd)
+                .padding(end = 12.dp)
         )
     }
 }

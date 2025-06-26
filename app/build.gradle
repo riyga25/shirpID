@@ -2,17 +2,17 @@ plugins {
     id 'com.android.application'
     id("kotlin-android")
     id("kotlinx-serialization")
-    id "org.jetbrains.kotlin.plugin.compose" version "2.1.10"
+    id "org.jetbrains.kotlin.plugin.compose" version "2.1.20"
 }
 
 android {
-    compileSdk 35
+    compileSdk 36
     namespace 'com.riyga.identifier'
 
     defaultConfig {
         applicationId "com.riyga.identifier"
         minSdk 26
-        targetSdk 35
+        targetSdk 36
         versionCode 1
         versionName "1.0.0"
     }
@@ -44,14 +44,14 @@ android {
 
 dependencies {
     implementation fileTree(dir: "libs", include: ["*.jar"])
-    implementation "androidx.core:core-ktx:1.15.0"
-    implementation "androidx.appcompat:appcompat:1.7.0"
+    implementation "androidx.core:core-ktx:1.16.0"
+    implementation "androidx.appcompat:appcompat:1.7.1"
     implementation "com.google.android.material:material:1.12.0"
-    implementation "org.tensorflow:tensorflow-lite:2.6.0"
+    implementation "org.tensorflow:tensorflow-lite:2.17.0"
     implementation "androidx.preference:preference-ktx:1.2.1"
     implementation "com.squareup.okhttp3:okhttp:4.12.0"
 
-    implementation platform("androidx.compose:compose-bom:2025.02.00")
+    implementation platform("androidx.compose:compose-bom:2025.06.01")
     implementation("androidx.compose.material3:material3")
     implementation("androidx.compose.runtime:runtime")
     implementation("androidx.compose.foundation:foundation")
@@ -59,18 +59,21 @@ dependencies {
     implementation("androidx.compose.animation:animation")
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.ui:ui-tooling")
-    implementation 'androidx.activity:activity-compose:1.10.0'
+    implementation 'androidx.activity:activity-compose:1.10.1'
+
+    implementation("androidx.navigation:navigation-compose:2.9.0")
+    implementation("com.eygraber:uri-kmp:0.0.19")
 
     implementation 'com.google.android.gms:play-services-location:21.3.0'
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.10.1")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.10.2")
 
-    def koin = "4.1.0-Beta5"
+    def koin = "4.1.0"
     implementation("io.insert-koin:koin-core:$koin")
     implementation("io.insert-koin:koin-android:$koin")
     implementation("io.insert-koin:koin-compose:$koin")
     implementation("io.insert-koin:koin-compose-viewmodel:$koin")
 
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.1")
     implementation("com.jakewharton.retrofit:retrofit2-kotlinx-serialization-converter:1.0.0")
     implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
 }
