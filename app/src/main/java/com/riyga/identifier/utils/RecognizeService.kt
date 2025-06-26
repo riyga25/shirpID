@@ -64,7 +64,7 @@ class RecognizeService: Service() {
 
             createNotificationChannel()
 
-            val notification = createNotification("Listening birds...")
+            val notification = createNotification("Подслушиваем пичуг...")
             startForeground(1, notification)
 
             soundClassifier?.runMetaInterpreter(

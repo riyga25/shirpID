@@ -6,6 +6,8 @@ import android.location.Location
 import android.media.AudioFormat
 import android.media.AudioRecord
 import android.media.MediaRecorder
+import android.media.audiofx.AutomaticGainControl
+import android.media.audiofx.NoiseSuppressor
 import android.util.Log
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -65,6 +67,9 @@ class SoundClassifier(
     private var audioRecord: AudioRecord? = null
     private var wavRecorder: WavRecorder? = null
 
+    private var noiseSuppressor: NoiseSuppressor? = null // Добавляем
+    private var agc: AutomaticGainControl? = null      // Добавляем
+
     private val audioLock = Any()
 
     private val bufferSize = maxOf(
@@ -119,10 +124,20 @@ class SoundClassifier(
             try {
                 audioRecord?.apply {
                     if (state == AudioRecord.STATE_INITIALIZED) {
-                        stop()
-                        release()
+                        stop() // Сначала останавливаем запись
                     }
                 }
+
+                // Освобождаем ресурсы шумоподавления и АРУ
+                noiseSuppressor?.enabled = false
+                noiseSuppressor?.release()
+                noiseSuppressor = null
+
+                agc?.enabled = false
+                agc?.release()
+                agc = null
+
+                audioRecord?.release() // Затем освобождаем сам AudioRecord
                 audioRecord = null
                 _isRecording.value = false
 
@@ -147,13 +162,33 @@ class SoundClassifier(
 
     @SuppressLint("MissingPermission")
     private fun initializeAudioRecord(): AudioRecord {
-        return AudioRecord(
-            MediaRecorder.AudioSource.UNPROCESSED,
+        val record = AudioRecord(
+            MediaRecorder.AudioSource.UNPROCESSED, // Или другой источник для теста
             options.sampleRate,
             AudioFormat.CHANNEL_IN_MONO,
             AudioFormat.ENCODING_PCM_16BIT,
             bufferSize
         )
+
+        // Попытка инициализировать шумоподавление
+        if (NoiseSuppressor.isAvailable()) {
+            noiseSuppressor = NoiseSuppressor.create(record.audioSessionId)
+            noiseSuppressor?.enabled = true // Включаем, если создался
+            Log.i(TAG, "NoiseSuppressor enabled: ${noiseSuppressor?.enabled}")
+        } else {
+            Log.w(TAG, "NoiseSuppressor not available on this device.")
+        }
+
+        // Попытка инициализировать АРУ
+        if (AutomaticGainControl.isAvailable()) {
+            agc = AutomaticGainControl.create(record.audioSessionId)
+            agc?.enabled = true // Включаем
+            Log.i(TAG, "AutomaticGainControl enabled: ${agc?.enabled}")
+        } else {
+            Log.w(TAG, "AutomaticGainControl not available on this device.")
+        }
+
+        return record
     }
 
     private fun loadLabels() {
