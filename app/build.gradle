@@ -3,6 +3,8 @@ plugins {
     id("kotlin-android")
     id("kotlinx-serialization")
     id "org.jetbrains.kotlin.plugin.compose" version "2.1.20"
+    id("com.google.gms.google-services")
+    id("com.google.firebase.crashlytics")
 }
 
 android {
@@ -10,11 +12,11 @@ android {
     namespace 'com.riyga.identifier'
 
     defaultConfig {
-        applicationId "com.riyga.identifier"
+        applicationId "by.riyga.birdnet"
         minSdk 26
         targetSdk 36
         versionCode 1
-        versionName "1.0.0"
+        versionName "0.0.1"
     }
 
     buildTypes {
@@ -76,4 +78,8 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.1")
     implementation("com.jakewharton.retrofit:retrofit2-kotlinx-serialization-converter:1.0.0")
     implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
+
+    implementation(platform("com.google.firebase:firebase-bom:33.16.0"))
+    implementation("com.google.firebase:firebase-analytics")
+    implementation("com.google.firebase:firebase-crashlytics-ndk")
 }

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "288252605731",
+    "project_id": "birdnet-5c679",
+    "storage_bucket": "birdnet-5c679.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:288252605731:android:4cf298427acddc3a9f4896",
+        "android_client_info": {
+          "package_name": "by.riyga.birdnet"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD0g2TE8df44mAIZ8RTwMamIuDD4JYHe9M"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
