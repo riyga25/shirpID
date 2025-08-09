@@ -2,7 +2,6 @@ package com.riyga.identifier.utils
 
 import android.annotation.SuppressLint
 import android.content.Context
-import android.location.Location
 import android.media.AudioFormat
 import android.media.AudioRecord
 import android.media.MediaRecorder
@@ -25,11 +24,13 @@ import java.nio.ByteOrder
 import java.nio.FloatBuffer
 import java.nio.channels.Channels
 import java.time.LocalDate
-import java.util.Locale
+import kotlin.math.abs
 import kotlin.math.cos
+import kotlin.math.exp
+import kotlin.math.sqrt
 
 class SoundClassifier(
-    private val  context: Context,
+    private val context: Context,
     private val options: Options = Options(),
     private val externalScope: CoroutineScope
 ) {
@@ -44,31 +45,30 @@ class SoundClassifier(
     private val _isRecording = MutableStateFlow(false)
     val isRecording: StateFlow<Boolean> get() = _isRecording
 
-    /** Names of the model's output classes.  */
-    lateinit var labelList: List<String>
-
-    /** Names of the model's output classes.  */
-    lateinit var assetList: List<String>
+    private lateinit var labelList: List<String>
 
     private lateinit var interpreter: Interpreter
     private lateinit var metaInterpreter: Interpreter
 
     private lateinit var predictionProbs: FloatArray
     private lateinit var metaPredictionProbs: FloatArray
-    private lateinit var inputBuffer: FloatBuffer
     private lateinit var metaInputBuffer: FloatBuffer
 
     private var modelInputLength = 0
     private var modelNumClasses = 0
-    private var metaModelInputLength = 0
     private var metaModelNumClasses = 0
     private var inferenceInterval = 800L
+
+    private val silenceDetector = SilenceDetector(
+        durationSeconds = 3,
+        sampleRate = options.sampleRate
+    )
 
     private var audioRecord: AudioRecord? = null
     private var wavRecorder: WavRecorder? = null
 
-    private var noiseSuppressor: NoiseSuppressor? = null // Добавляем
-    private var agc: AutomaticGainControl? = null      // Добавляем
+    private var noiseSuppressor: NoiseSuppressor? = null
+    private var agc: AutomaticGainControl? = null
 
     private val audioLock = Any()
 
@@ -80,6 +80,10 @@ class SoundClassifier(
         ),
         options.sampleRate * 2
     )
+
+    // Для антидребезга
+    private var lastLabel: String? = null
+    private var lastTime = 0L
 
     init {
         try {
@@ -98,23 +102,17 @@ class SoundClassifier(
                     audioRecord = initializeAudioRecord()
                 }
 
-                wavRecorder = WavRecorder(
-                    audioRecord = audioRecord!!,
-                    context = context
-                )
+                wavRecorder = WavRecorder(audioRecord = audioRecord!!, context = context)
 
                 audioRecord?.startRecording()
                 wavRecorder?.startRecording()
 
-                externalScope.launch(Dispatchers.IO) {
-                    startRecognition()
-                }
+                externalScope.launch(Dispatchers.IO) { startRecognition() }
                 _isRecording.value = true
             } catch (e: Exception) {
                 Log.e(TAG, "Error starting audio record: ${e.message}")
             }
         }
-
     }
 
     fun stop(saveRecording: Boolean = true) {
@@ -123,12 +121,9 @@ class SoundClassifier(
 
             try {
                 audioRecord?.apply {
-                    if (state == AudioRecord.STATE_INITIALIZED) {
-                        stop() // Сначала останавливаем запись
-                    }
+                    if (state == AudioRecord.STATE_INITIALIZED) stop()
                 }
 
-                // Освобождаем ресурсы шумоподавления и АРУ
                 noiseSuppressor?.enabled = false
                 noiseSuppressor?.release()
                 noiseSuppressor = null
@@ -137,15 +132,11 @@ class SoundClassifier(
                 agc?.release()
                 agc = null
 
-                audioRecord?.release() // Затем освобождаем сам AudioRecord
+                audioRecord?.release()
                 audioRecord = null
                 _isRecording.value = false
 
-                if (saveRecording) {
-                    wavRecorder?.stopRecording()
-                } else {
-                    wavRecorder?.cancelRecording()
-                }
+                if (saveRecording) wavRecorder?.stopRecording() else wavRecorder?.cancelRecording()
             } catch (e: Exception) {
                 Log.e(TAG, "Error stopping audio record: ${e.message}")
             }
@@ -154,7 +145,6 @@ class SoundClassifier(
 
     private fun initialize() {
         loadLabels()
-        loadAssetList()
         interpreter = setupInterpreter(options.modelPath, ::onInterpreterReady)
         metaInterpreter = setupInterpreter(options.metaModelPath, ::onMetaInterpreterReady)
         warmUpModel()
@@ -163,29 +153,23 @@ class SoundClassifier(
     @SuppressLint("MissingPermission")
     private fun initializeAudioRecord(): AudioRecord {
         val record = AudioRecord(
-            MediaRecorder.AudioSource.UNPROCESSED, // Или другой источник для теста
+            MediaRecorder.AudioSource.UNPROCESSED,
             options.sampleRate,
             AudioFormat.CHANNEL_IN_MONO,
             AudioFormat.ENCODING_PCM_16BIT,
             bufferSize
         )
 
-        // Попытка инициализировать шумоподавление
         if (NoiseSuppressor.isAvailable()) {
             noiseSuppressor = NoiseSuppressor.create(record.audioSessionId)
-            noiseSuppressor?.enabled = true // Включаем, если создался
+            noiseSuppressor?.enabled = true
             Log.i(TAG, "NoiseSuppressor enabled: ${noiseSuppressor?.enabled}")
-        } else {
-            Log.w(TAG, "NoiseSuppressor not available on this device.")
         }
 
-        // Попытка инициализировать АРУ
         if (AutomaticGainControl.isAvailable()) {
             agc = AutomaticGainControl.create(record.audioSessionId)
-            agc?.enabled = true // Включаем
+            agc?.enabled = true
             Log.i(TAG, "AutomaticGainControl enabled: ${agc?.enabled}")
-        } else {
-            Log.w(TAG, "AutomaticGainControl not available on this device.")
         }
 
         return record
@@ -195,38 +179,19 @@ class SoundClassifier(
         try {
             val labels =
                 context.assets.open(options.labelsFile).bufferedReader().use { it.readLines() }
-            labelList = labels.map { it.trim().capitalize(Locale.ROOT) }
+            labelList = labels.map { it.trim().replaceFirstChar { ch -> ch.uppercase() } }
             Log.i(TAG, "Loaded ${labelList.size} labels from ${options.labelsFile}")
         } catch (e: IOException) {
             Log.e(TAG, "Failed to load labels: ${e.message}")
         }
     }
 
-    /** Retrieve asset list from "asset_list" file */
-    private fun loadAssetList() {
-        try {
-            val assets =
-                context.assets.open(options.assetFile).bufferedReader().use { it.readLines() }
-            assetList = assets.map { it.trim() }
-            Log.i(TAG, "Loaded ${assetList.size} assets from ${options.assetFile}")
-        } catch (e: IOException) {
-            Log.e(TAG, "Failed to load asset list from ${options.assetFile}: ${e.message}")
-            assetList = emptyList()
-        }
-    }
-
     private fun loadModelFromAssets(fileName: String): ByteBuffer {
-        try {
-            val assetManager = context.assets
-            val inputStream = assetManager.open(fileName)
-            val fileSize = inputStream.available()
-            val buffer = ByteBuffer.allocateDirect(fileSize).order(ByteOrder.nativeOrder())
-            val channel = Channels.newChannel(inputStream)
-            channel.read(buffer)
-            buffer.rewind()
-            return buffer
-        } catch (err: Throwable) {
-            throw err
+        val inputStream = context.assets.open(fileName)
+        val fileSize = inputStream.available()
+        return ByteBuffer.allocateDirect(fileSize).order(ByteOrder.nativeOrder()).apply {
+            Channels.newChannel(inputStream).read(this)
+            rewind()
         }
     }
 
@@ -238,7 +203,6 @@ class SoundClassifier(
         modelInputLength = inputShape[1]
         modelNumClasses = outputShape[1]
         predictionProbs = FloatArray(modelNumClasses) { Float.NaN }
-        inputBuffer = FloatBuffer.allocate(modelInputLength)
     }
 
     private fun onMetaInterpreterReady(
@@ -246,36 +210,26 @@ class SoundClassifier(
         inputShape: IntArray,
         outputShape: IntArray
     ) {
-        metaModelInputLength = inputShape[1]
         metaModelNumClasses = outputShape[1]
         metaPredictionProbs = FloatArray(metaModelNumClasses) { 1f }
-        metaInputBuffer = FloatBuffer.allocate(metaModelInputLength)
+        metaInputBuffer = FloatBuffer.allocate(inputShape[1])
     }
 
     private fun setupInterpreter(
         modelPath: String,
         onReady: (Interpreter, IntArray, IntArray) -> Unit
     ): Interpreter {
-        try {
-            val buffer = loadModelFromAssets(modelPath)
-            val interpreter = Interpreter(buffer, Interpreter.Options())
-
-            val inputShape = interpreter.getInputTensor(0).shape()
-            val outputShape = interpreter.getOutputTensor(0).shape()
-
-            onReady(interpreter, inputShape, outputShape)
-
-            Log.i(TAG, "Interpreter initialized for $modelPath")
-            return interpreter
-        } catch (e: IOException) {
-            Log.e(TAG, "Failed to initialize interpreter for $modelPath: ${e.message}")
-            throw RuntimeException("Interpreter initialization failed")
-        }
+        val buffer = loadModelFromAssets(modelPath)
+        val interpreter = Interpreter(buffer, Interpreter.Options())
+        onReady(
+            interpreter,
+            interpreter.getInputTensor(0).shape(),
+            interpreter.getOutputTensor(0).shape()
+        )
+        return interpreter
     }
 
     fun runMetaInterpreter(latitude: Float, longitude: Float) {
-        Log.i(TAG, "Location is: ${latitude}/${longitude}")
-
         try {
             val dayOfYear = LocalDate.now().dayOfYear
             val weekMeta = cos(Math.toRadians(dayOfYear * 7.5)) + 1.0
@@ -283,12 +237,12 @@ class SoundClassifier(
             metaInputBuffer.put(0, latitude)
             metaInputBuffer.put(1, longitude)
             metaInputBuffer.put(2, weekMeta.toFloat())
-            metaInputBuffer.rewind() // Reset position to beginning of buffer
+            metaInputBuffer.rewind()
+
             val metaOutputBuffer = FloatBuffer.allocate(metaModelNumClasses)
-            metaOutputBuffer.rewind()
             metaInterpreter.run(metaInputBuffer, metaOutputBuffer)
             metaOutputBuffer.rewind()
-            metaOutputBuffer.get(metaPredictionProbs) // Copy data to metaPredictionProbs.
+            metaOutputBuffer.get(metaPredictionProbs)
 
             metaPredictionProbs = metaPredictionProbs.map { prob ->
                 when {
@@ -314,14 +268,19 @@ class SoundClassifier(
                 wavRecorder?.writeAudioDataLoop(recordingBuffer, samples)
                 bufferIndex =
                     updateCircularBuffer(circularBuffer, recordingBuffer, samples, bufferIndex)
-                val inputBuffer = prepareInputBuffer(circularBuffer, bufferIndex)
-                if (inputBuffer != null) {
+
+                silenceDetector.addSamples(recordingBuffer)
+
+                if (!silenceDetector.isSilence()) {
+                    val inputBuffer = normalize(circularBuffer, bufferIndex)
                     val outputBuffer = FloatBuffer.allocate(modelNumClasses)
                     interpreter.run(inputBuffer, outputBuffer)
                     processModelOutput(outputBuffer)
+                    delay(inferenceInterval)
+                } else {
+                    delay(200) // быстро проверяем тишину, но не нагружаем CPU
                 }
             }
-            delay(inferenceInterval)
         }
     }
 
@@ -339,33 +298,35 @@ class SoundClassifier(
         return currentIndex
     }
 
-    private fun prepareInputBuffer(buffer: ShortArray, index: Int): FloatBuffer? {
-        val input = FloatBuffer.allocate(modelInputLength)
-        var allZero = true
+    private fun normalize(buffer: ShortArray, startIndex: Int): FloatBuffer {
+        val fb = FloatBuffer.allocate(modelInputLength)
+        val maxAmp = buffer.maxOf { abs(it.toInt()) }.coerceAtLeast(1)
         for (i in 0 until modelInputLength) {
-            val sample = buffer[(i + index) % modelInputLength]
-            if (sample != 0.toShort()) allZero = false
-            input.put(sample.toFloat() / 32768f)
+            fb.put(buffer[(i + startIndex) % modelInputLength].toFloat() / maxAmp)
         }
-        return if (allZero) null else input.apply { rewind() }
+        fb.rewind()
+        return fb
     }
 
     private fun processModelOutput(outputBuffer: FloatBuffer) {
         outputBuffer.rewind()
         outputBuffer.get(predictionProbs)
 
-        val probList = if (false) { // check location is disabled
-            predictionProbs.map { 1 / (1 + kotlin.math.exp(-it)) } // Apply sigmoid
-        } else {
-            predictionProbs.mapIndexed { i, value ->
-                metaPredictionProbs[i] / (1 + kotlin.math.exp(-value))
-            }
+        val probList = predictionProbs.mapIndexed { i, value ->
+            metaPredictionProbs[i] / (1 + exp(-value))
         }
 
         val max = probList.withIndex().maxByOrNull { it.value }
-
         max?.let {
-            externalScope.launch { _birdEvents.emit(labelList[it.index] to it.value) }
+            val label = labelList[it.index]
+            val confidence = it.value
+            if (confidence >= options.confidenceThreshold &&
+                (label != lastLabel || System.currentTimeMillis() - lastTime > options.antiDebounceMs)
+            ) {
+                lastLabel = label
+                lastTime = System.currentTimeMillis()
+                externalScope.launch { _birdEvents.emit(label to confidence) }
+            }
         }
     }
 
@@ -381,14 +342,49 @@ class SoundClassifier(
     }
 
     class Options(
-        val assetFile: String = "assets.txt",
         val labelsFile: String = "labels_ru.txt",
         val modelPath: String = "BirdNET_GLOBAL_6K_V2.4_Model_FP16.tflite",
         val metaModelPath: String = "BirdNET_GLOBAL_6K_V2.4_MData_Model_FP16.tflite",
-        val sampleRate: Int = 48000, // 48 кГц
+        val sampleRate: Int = 48000,
         val warmupRuns: Int = 3,
         val metaProbabilityThreshold1: Float = 0.01f,
         val metaProbabilityThreshold2: Float = 0.008f,
-        val metaProbabilityThreshold3: Float = 0.001f
+        val metaProbabilityThreshold3: Float = 0.001f,
+        val confidenceThreshold: Float = 0.4f,
+        val antiDebounceMs: Long = 2000
     )
+}
+
+class SilenceDetector(
+    private val durationSeconds: Int,
+    private val sampleRate: Int,
+    private val threshold: Double = 1e-4
+) {
+    private val maxSamples: Int = durationSeconds * sampleRate
+    private val buffer: FloatBuffer = FloatBuffer.allocate(maxSamples)
+
+    fun addSamples(audioData: ShortArray) {
+        // Конвертируем в float [-1..1]
+        val floatData = FloatArray(audioData.size) { i -> audioData[i] / 32768f }
+        val samplesToWrite = minOf(floatData.size, buffer.remaining())
+        buffer.put(floatData, 0, samplesToWrite)
+    }
+
+    fun isSilence(): Boolean {
+        if (buffer.position() < maxSamples) return false // ещё не накопили
+        buffer.flip()
+        val samples = FloatArray(buffer.remaining())
+        buffer.get(samples)
+        buffer.clear()
+        val rmsValue = rms(samples)
+        return abs(rmsValue) <= threshold
+    }
+
+    private fun rms(samples: FloatArray): Double {
+        var sum = 0.0
+        for (s in samples) {
+            sum += s * s
+        }
+        return sqrt(sum / samples.size)
+    }
 }
