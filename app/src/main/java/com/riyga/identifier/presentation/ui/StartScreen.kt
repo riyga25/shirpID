@@ -13,7 +13,6 @@ import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -130,7 +129,7 @@ fun StartScreen(
             Column(
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.align(Alignment.Center)
+                modifier = Modifier.align(Alignment.BottomCenter)
             ) {
                 if (!uiState.allPermissionsGranted) {
                     PermissionRequestSection(
@@ -196,18 +195,26 @@ fun PermissionRequestSection(
 @Composable
 fun MainActionButton(onStart: () -> Unit) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(
+            text = stringResource(R.string.sound_id_title),
+            fontSize = 24.sp,
+            modifier = Modifier.padding(top = 16.dp),
+            color = MaterialTheme.colorScheme.onBackground
+        )
         Box(
             Modifier.rippleLoadingAnimationModifier(
-                isActive = true, // Это состояние может также управляться извне, если нужно
+                isActive = false, // Это состояние может также управляться извне, если нужно
                 color = MaterialTheme.colorScheme.primary,
                 expandFactor = 5f,
             )
         ) {
             Box(
                 modifier = Modifier
-                    .background(MaterialTheme.colorScheme.primary, CircleShape)
-                    .size(120.dp)
-                    .clip(CircleShape)
+                    .padding(16.dp)
+                    .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(16.dp))
+                    .height(60.dp)
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(16.dp))
                     .clickable(
                         role = Role.Button,
                         onClick = onStart
@@ -218,16 +225,10 @@ fun MainActionButton(onStart: () -> Unit) {
                     painter = painterResource(R.drawable.ic_mic),
                     contentDescription = stringResource(R.string.start_record_desc),
                     tint = MaterialTheme.colorScheme.onPrimary,
-                    modifier = Modifier.size(64.dp)
+                    modifier = Modifier.size(36.dp)
                 )
             }
         }
-        Text(
-            text = stringResource(R.string.sound_id_title),
-            fontSize = 24.sp,
-            modifier = Modifier.padding(top = 16.dp),
-            color = MaterialTheme.colorScheme.onBackground
-        )
     }
 }
 
