@@ -55,6 +55,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.riyga.identifier.R
 import com.riyga.identifier.data.models.LocationData
+import com.riyga.identifier.presentation.models.LocationInfo
 import com.riyga.identifier.utils.LocalNavController
 import com.riyga.identifier.utils.RecognizeService
 import kotlinx.coroutines.delay
@@ -67,12 +68,14 @@ import org.koin.compose.viewmodel.koinViewModel
 @Composable
 fun ProgressScreen(
     location: LocationData,
+    onNavigateToResults: (List<DetectedBird>, LocationData?, com.riyga.identifier.presentation.models.LocationInfo?, String?) -> Unit,
     viewModel: ProgressViewModel = koinViewModel()
 ) {
     val context = LocalContext.current
     val navController = LocalNavController.current
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     var identifiedBirds by remember { mutableStateOf<Set<String>>(emptySet()) }
+    val birdConfidences = remember { mutableStateMapOf<String, Float>() }
     val highlightedBirds = remember { mutableStateMapOf<String, Boolean>() }
     val haptic = LocalHapticFeedback.current
     val timer = remember { mutableStateOf("00:00.0") }
@@ -141,6 +144,8 @@ fun ProgressScreen(
                         haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                         identifiedBirds = identifiedBirds + bird
                     }
+                    // Track the highest confidence for each bird
+                    birdConfidences[bird] = maxOf(birdConfidences[bird] ?: 0f, percent)
                     highlightedBirds[bird] = true
                     delay(1000) // Эта задержка здесь ок для UI эффекта
                     highlightedBirds[bird] = false
@@ -160,9 +165,20 @@ fun ProgressScreen(
     Layout(
         identifiedBirds = identifiedBirds,
         highlightedBirds = highlightedBirds,
-        onStop = {
-            service?.stop(it)
-            navController.navigateUp()
+        onStop = { saveRecord ->
+            service?.stop(saveRecord)
+            if (saveRecord) {
+                // Convert identified birds to DetectedBird objects with their confidence
+                val detectedBirdsList = identifiedBirds.map { birdName ->
+                    DetectedBird(
+                        name = birdName,
+                        confidence = birdConfidences[birdName] ?: 0f
+                    )
+                }
+                onNavigateToResults(detectedBirdsList, state.location, state.locationInfo, RecognizeService.audioFilePath)
+            } else {
+                navController.navigateUp()
+            }
         },
         location = state.location.toStringLocation(),
         place = state.locationInfo.toStringLocation(),

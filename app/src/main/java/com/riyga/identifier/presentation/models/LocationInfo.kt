@@ -1,5 +1,8 @@
 package com.riyga.identifier.presentation.models
 
+import kotlinx.serialization.Serializable
+
+@Serializable
 data class LocationInfo(
     val latitude: Double,
     val longitude: Double,

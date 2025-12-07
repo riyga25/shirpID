@@ -27,6 +27,10 @@ class RecognizeService: Service() {
 
         private val _birdsEvents = MutableSharedFlow<Pair<String, Float>>()
         val birdsEvents = _birdsEvents.asSharedFlow()
+        
+        // Store the audio file path
+        var audioFilePath: String? = null
+            private set
     }
 
     private val binder = LocalBinder()
@@ -50,7 +54,7 @@ class RecognizeService: Service() {
     }
 
     fun stop(saveRecording: Boolean) {
-        soundClassifier?.stop(saveRecording)
+        audioFilePath = soundClassifier?.stop(saveRecording)
         stopForeground(STOP_FOREGROUND_REMOVE)
         stopSelf()
     }

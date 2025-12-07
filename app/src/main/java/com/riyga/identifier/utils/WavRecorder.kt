@@ -61,10 +61,11 @@ class WavRecorder(
 
     /**
      * Stop recording and save the file to permanent storage.
+     * Returns the file path of the saved file.
      */
-    fun stopRecording() {
+    fun stopRecording(): String? {
         synchronized(audioLock) {
-            if (!isRecording) return
+            if (!isRecording) return null
 
             try {
                 outputStream?.let {
@@ -74,11 +75,13 @@ class WavRecorder(
                 }
 
                 // Переносим временный файл в постоянное хранилище
-                saveTemporaryFileToMediaStore()
+                val filePath = saveTemporaryFileToMediaStore()
 
                 Log.i("WavRecorder", "Recording saved successfully.")
+                return filePath
             } catch (e: Exception) {
                 Log.e("WavRecorder", "Error stopping recording: ${e.message}")
+                return null
             } finally {
                 cleanup()
             }
@@ -126,8 +129,9 @@ class WavRecorder(
 
     /**
      * Save the temporary file to MediaStore as a WAV file.
+     * Returns the file path of the saved file.
      */
-    private fun saveTemporaryFileToMediaStore() {
+    private fun saveTemporaryFileToMediaStore(): String? {
         val contentValues = ContentValues().apply {
             put(MediaStore.Audio.Media.DISPLAY_NAME, "${getCurrentTimestamp()}.wav")
             put(MediaStore.Audio.Media.MIME_TYPE, "audio/wav")
@@ -139,8 +143,11 @@ class WavRecorder(
             context.contentResolver.openOutputStream(it)?.use { output ->
                 temporaryFile?.inputStream()?.copyTo(output)
             }
+            // Return the URI as a string
+            return uri.toString()
         }
         temporaryFile?.delete() // Удаляем временный файл
+        return null
     }
 
     /**

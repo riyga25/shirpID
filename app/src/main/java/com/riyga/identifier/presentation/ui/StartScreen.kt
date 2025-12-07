@@ -51,6 +51,7 @@ fun openAppSettings(context: Context) {
 @Composable
 fun StartScreen(
     onStart: (location: LocationData) -> Unit = {},
+    onShowHistory: () -> Unit = {},
     viewModel: StartScreenViewModel = koinViewModel()
 ) {
     val context = LocalContext.current
@@ -148,7 +149,8 @@ fun StartScreen(
                     )
                 } else if (!uiState.isLoadingLocation && uiState.locationError == null) {
                     MainActionButton(
-                        onStart = { uiState.currentLocation?.let { onStart.invoke(it) } }
+                        onStart = { uiState.currentLocation?.let { onStart.invoke(it) } },
+                        onShowHistory = onShowHistory
                     )
                 }
             }
@@ -193,41 +195,34 @@ fun PermissionRequestSection(
 }
 
 @Composable
-fun MainActionButton(onStart: () -> Unit) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+fun MainActionButton(
+    onStart: () -> Unit,
+    onShowHistory: () -> Unit,
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier.padding(horizontal = 16.dp)
+    ) {
         Text(
             text = stringResource(R.string.sound_id_title),
             fontSize = 24.sp,
-            modifier = Modifier.padding(top = 16.dp),
             color = MaterialTheme.colorScheme.onBackground
         )
-        Box(
-            Modifier.rippleLoadingAnimationModifier(
-                isActive = false, // Это состояние может также управляться извне, если нужно
-                color = MaterialTheme.colorScheme.primary,
-                expandFactor = 5f,
+        Spacer(Modifier.size(16.dp))
+        Button(onClick = onStart, modifier = Modifier.fillMaxWidth()) {
+            Icon(
+                painter = painterResource(R.drawable.ic_mic),
+                contentDescription = stringResource(R.string.start_record_desc),
+                tint = MaterialTheme.colorScheme.onPrimary,
+                modifier = Modifier.size(36.dp)
             )
+        }
+        Spacer(Modifier.size(16.dp))
+        OutlinedButton(
+            onClick = onShowHistory,
+            modifier = Modifier.fillMaxWidth()
         ) {
-            Box(
-                modifier = Modifier
-                    .padding(16.dp)
-                    .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(16.dp))
-                    .height(60.dp)
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(16.dp))
-                    .clickable(
-                        role = Role.Button,
-                        onClick = onStart
-                    ),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    painter = painterResource(R.drawable.ic_mic),
-                    contentDescription = stringResource(R.string.start_record_desc),
-                    tint = MaterialTheme.colorScheme.onPrimary,
-                    modifier = Modifier.size(36.dp)
-                )
-            }
+            Text("Show history")
         }
     }
 }

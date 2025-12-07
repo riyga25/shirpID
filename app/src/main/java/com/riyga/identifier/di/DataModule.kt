@@ -1,6 +1,9 @@
 package com.riyga.identifier.di
 
 import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
+import com.riyga.identifier.data.birds.RecordRepository
+import com.riyga.identifier.data.birds.RecordRepositoryImpl
+import com.riyga.identifier.data.database.AppDatabase
 import com.riyga.identifier.data.location.LocationRepository
 import com.riyga.identifier.data.location.LocationRepositoryImpl
 import com.riyga.identifier.data.network.GeocoderApiService
@@ -10,13 +13,22 @@ import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
+import org.koin.android.ext.koin.androidContext
 import org.koin.dsl.module
 import retrofit2.Retrofit
 
 val dataModule = module {
+    // Database
+    single { AppDatabase.getDatabase(androidContext()) }
+    single { get<AppDatabase>().recordDao() }
+    
+    // Repositories
+    single<RecordRepository> { RecordRepositoryImpl(get()) }
+    single<LocationRepository> { LocationRepositoryImpl(get()) }
+    
+    // Network
     single { provideGeocoderApi() }
     single<GeocoderDataSource> { GeocoderDataSourceImpl(get()) }
-    single<LocationRepository> { LocationRepositoryImpl(get()) }
 }
 
 private val json = Json {

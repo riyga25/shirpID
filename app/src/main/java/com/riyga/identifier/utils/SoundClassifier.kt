@@ -115,9 +115,9 @@ class SoundClassifier(
         }
     }
 
-    fun stop(saveRecording: Boolean = true) {
+    fun stop(saveRecording: Boolean = true): String? {
         synchronized(audioLock) {
-            if (!_isRecording.value) return
+            if (!_isRecording.value) return null
 
             try {
                 audioRecord?.apply {
@@ -136,9 +136,12 @@ class SoundClassifier(
                 audioRecord = null
                 _isRecording.value = false
 
-                if (saveRecording) wavRecorder?.stopRecording() else wavRecorder?.cancelRecording()
+                val filePath = if (saveRecording) wavRecorder?.stopRecording() else null
+                if (!saveRecording) wavRecorder?.cancelRecording()
+                return filePath
             } catch (e: Exception) {
                 Log.e(TAG, "Error stopping audio record: ${e.message}")
+                return null
             }
         }
     }
@@ -316,18 +319,40 @@ class SoundClassifier(
             metaPredictionProbs[i] / (1 + exp(-value))
         }
 
-        val max = probList.withIndex().maxByOrNull { it.value }
-        max?.let {
-            val label = labelList[it.index]
-            val confidence = it.value
-            if (confidence >= options.confidenceThreshold &&
-                (label != lastLabel || System.currentTimeMillis() - lastTime > options.antiDebounceMs)
-            ) {
-                lastLabel = label
-                lastTime = System.currentTimeMillis()
-                externalScope.launch { _birdEvents.emit(label to confidence) }
-            }
+        // 1. Сортируем все предсказания по убыванию уверенности
+        val sortedPredictions = probList.withIndex()
+            .map { IndexedValue(it.index, it.value) } // Убедимся, что это IndexedValue<Float>
+            .sortedByDescending { it.value }
+
+        // 2. Определяем, сколько топовых результатов мы хотим взять (например, 3)
+        val topN = 3 // Вы можете сделать это настраиваемым через options
+
+        // 3. Берем N лучших предсказаний, которые проходят порог уверенности
+        val topPredictions = sortedPredictions
+            .take(topN)
+            .filter { it.value >= options.confidenceThreshold }
+
+        // 4. Обрабатываем каждое из выбранных предсказаний
+        topPredictions.forEachIndexed { i, prediction ->
+            val label = labelList[prediction.index]
+            val confidence = prediction.value
+
+            externalScope.launch { _birdEvents.emit(label to confidence) }
         }
+
+//        val max = probList.withIndex().maxByOrNull { it.value }
+//        max?.let {
+//            val label = labelList[it.index]
+//            val confidence = it.value
+//
+//            if (confidence >= options.confidenceThreshold &&
+//                (label != lastLabel || System.currentTimeMillis() - lastTime > options.antiDebounceMs)
+//            ) {
+//                lastLabel = label
+//                lastTime = System.currentTimeMillis()
+//                externalScope.launch { _birdEvents.emit(label to confidence) }
+//            }
+//        }
     }
 
     private fun warmUpModel() {
