@@ -11,12 +11,12 @@ dependencyResolutionManagement {
         google()
         mavenCentral()
         maven {
-            url("https://jitpack.io")
+            url = uri("https://jitpack.io")
         }
         maven {
-            url("https://plugins.gradle.org/m2/")
+            url = uri("https://plugins.gradle.org/m2/")
         }
     }
 }
 rootProject.name = "sound_clasifier"
-include ':app'
+include(":app")
