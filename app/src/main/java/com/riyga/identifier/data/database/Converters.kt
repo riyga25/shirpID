@@ -1,9 +1,7 @@
 package com.riyga.identifier.data.database
 
 import androidx.room.TypeConverter
-import com.riyga.identifier.presentation.ui.DetectedBird
-import kotlinx.serialization.decodeFromString
-import kotlinx.serialization.encodeToString
+import com.riyga.identifier.presentation.ui.detection_result.DetectedBird
 import kotlinx.serialization.json.Json
 
 class Converters {

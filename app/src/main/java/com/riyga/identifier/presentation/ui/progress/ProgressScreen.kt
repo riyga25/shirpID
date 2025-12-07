@@ -1,4 +1,4 @@
-package com.riyga.identifier.presentation.ui
+package com.riyga.identifier.presentation.ui.progress
 
 import android.content.ComponentName
 import android.content.Context
@@ -40,7 +40,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -56,19 +55,18 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.riyga.identifier.R
 import com.riyga.identifier.data.models.LocationData
 import com.riyga.identifier.presentation.models.LocationInfo
+import com.riyga.identifier.presentation.ui.detection_result.DetectedBird
 import com.riyga.identifier.utils.LocalNavController
 import com.riyga.identifier.utils.RecognizeService
 import kotlinx.coroutines.delay
 import com.riyga.identifier.utils.toStringLocation
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.isActive
-import kotlinx.coroutines.launch
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
 fun ProgressScreen(
     location: LocationData,
-    onNavigateToResults: (List<DetectedBird>, LocationData?, com.riyga.identifier.presentation.models.LocationInfo?, String?) -> Unit,
+    onNavigateToResults: (List<DetectedBird>, LocationData?, LocationInfo?, String?) -> Unit,
     viewModel: ProgressViewModel = koinViewModel()
 ) {
     val context = LocalContext.current

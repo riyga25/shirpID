@@ -2,7 +2,7 @@ package com.riyga.identifier.data.models
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
-import com.riyga.identifier.presentation.ui.DetectedBird
+import com.riyga.identifier.presentation.ui.detection_result.DetectedBird
 import kotlinx.serialization.Serializable
 
 @Entity(tableName = "records")

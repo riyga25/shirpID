@@ -1,4 +1,4 @@
-package com.riyga.identifier.presentation.ui
+package com.riyga.identifier.presentation.ui.detection_result
 
 import android.content.Context
 import android.util.Log

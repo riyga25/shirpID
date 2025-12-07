@@ -1,4 +1,4 @@
-package com.riyga.identifier.presentation.ui
+package com.riyga.identifier.presentation.ui.history
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope

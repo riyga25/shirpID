@@ -1,4 +1,4 @@
-package com.riyga.identifier.presentation.ui
+package com.riyga.identifier.presentation.ui.progress
 
 import android.util.Log
 import androidx.lifecycle.ViewModel

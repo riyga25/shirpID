@@ -1,4 +1,4 @@
-package com.riyga.identifier.presentation.ui
+package com.riyga.identifier.presentation.ui.start
 
 import android.Manifest
 import android.app.Activity
