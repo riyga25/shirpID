@@ -82,8 +82,8 @@ class SoundClassifier(
     )
 
     // Для антидребезга
-    private var lastLabel: String? = null
-    private var lastTime = 0L
+//    private var lastLabel: String? = null
+//    private var lastTime = 0L
 
     init {
         try {
@@ -369,14 +369,13 @@ class SoundClassifier(
     class Options(
         val labelsFile: String = "labels_ru.txt",
         val modelPath: String = "BirdNET_GLOBAL_6K_V2.4_Model_FP16.tflite",
-        val metaModelPath: String = "BirdNET_GLOBAL_6K_V2.4_MData_Model_FP16.tflite",
+        val metaModelPath: String = "BirdNET_GLOBAL_6K_V2.4_MData_Model_V2_FP16.tflite",
         val sampleRate: Int = 48000,
         val warmupRuns: Int = 3,
         val metaProbabilityThreshold1: Float = 0.01f,
         val metaProbabilityThreshold2: Float = 0.008f,
         val metaProbabilityThreshold3: Float = 0.001f,
-        val confidenceThreshold: Float = 0.4f,
-        val antiDebounceMs: Long = 2000
+        val confidenceThreshold: Float = 0.4f
     )
 }
 
