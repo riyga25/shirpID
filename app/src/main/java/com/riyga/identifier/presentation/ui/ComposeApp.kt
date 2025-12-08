@@ -1,6 +1,5 @@
 package com.riyga.identifier.presentation.ui
 
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.navigation.NavHostController
@@ -16,6 +15,7 @@ import com.riyga.identifier.presentation.ui.history.BirdHistoryScreen
 import com.riyga.identifier.presentation.ui.progress.ProgressScreen
 import com.riyga.identifier.presentation.ui.record_detail.RecordDetailScreen
 import com.riyga.identifier.presentation.ui.start.StartScreen
+import com.riyga.identifier.theme.AppTheme
 import com.riyga.identifier.utils.LocalNavController
 import com.riyga.identifier.utils.composableWithArgs
 import com.riyga.identifier.utils.navType
@@ -25,7 +25,7 @@ import kotlinx.serialization.Serializable
 fun ComposeApp() {
     val navController = rememberNavController()
 
-    MaterialTheme {
+    AppTheme {
         CompositionLocalProvider(
             LocalNavController provides navController
         ) {
@@ -42,10 +42,10 @@ sealed interface AppDestination {
 
     @Serializable
     data class Progress(val location: LocationData) : AppDestination
-    
+
     @Serializable
     data object BirdHistory : AppDestination
-    
+
     @Serializable
     data class BirdDetectionResult(
         val detectedBirds: List<DetectedBird>,
@@ -53,7 +53,7 @@ sealed interface AppDestination {
         val locationInfo: LocationInfo?,
         val audioFilePath: String?
     ) : AppDestination
-    
+
     @Serializable
     data class RecordDetail(val recordId: Long) : AppDestination
 }
@@ -95,11 +95,11 @@ fun AppNavHost(
                 }
             )
         }
-        
+
         composable<AppDestination.BirdHistory> {
             BirdHistoryScreen(navController = navController)
         }
-        
+
         composableWithArgs<AppDestination.BirdDetectionResult>(
             navType<List<DetectedBird>>(),
             navType<LocationData?>(nullable = true),
@@ -114,13 +114,13 @@ fun AppNavHost(
                 audioFilePath = route.audioFilePath
             )
         }
-        
+
         composableWithArgs<AppDestination.RecordDetail>(
             navType<Long>()
         ) { backStackEntry ->
             val route = backStackEntry.toRoute<AppDestination.RecordDetail>()
             val recordId = route.recordId
-            
+
             // We need to fetch the record from the database
             // For now, we'll pass a placeholder and fetch the record in the detail screen
             // In a real implementation, you'd fetch the record here and pass it to the screen
