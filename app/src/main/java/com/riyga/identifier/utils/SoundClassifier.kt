@@ -234,7 +234,8 @@ class SoundClassifier(
 
     fun runMetaInterpreter(latitude: Float, longitude: Float) {
         try {
-            val dayOfYear = LocalDate.now().dayOfYear
+            val dayOfYear = 160
+//            val dayOfYear = LocalDate.now().dayOfYear
             val weekMeta = cos(Math.toRadians(dayOfYear * 7.5)) + 1.0
 
             metaInputBuffer.put(0, latitude)

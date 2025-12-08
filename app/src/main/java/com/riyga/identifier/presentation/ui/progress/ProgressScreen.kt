@@ -32,6 +32,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -203,7 +204,7 @@ private fun Layout(
                     Column {
                         if (place.isNullOrEmpty().not()) {
                             Text(
-                                text = place ?: "",
+                                text = place,
                                 style = MaterialTheme.typography.labelMedium
                             )
                         }
@@ -214,7 +215,11 @@ private fun Layout(
                             )
                         }
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                    titleContentColor = MaterialTheme.colorScheme.onSurface
+                )
             )
         },
         bottomBar = {
@@ -223,7 +228,9 @@ private fun Layout(
                 onStop = { onStop(true) },
                 timerValue = timer.value
             )
-        }
+        },
+        containerColor = MaterialTheme.colorScheme.surfaceContainer,
+        contentColor = MaterialTheme.colorScheme.onSurface
     ) { paddings ->
         LazyColumn(
             contentPadding = PaddingValues(

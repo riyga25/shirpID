@@ -1,7 +1,10 @@
 package com.riyga.identifier.presentation.ui.history
 
+import android.annotation.SuppressLint
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -14,10 +17,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.riyga.identifier.data.models.Record
 import com.riyga.identifier.presentation.ui.AppDestination
+import com.riyga.identifier.utils.LocalNavController
 import org.koin.compose.viewmodel.koinViewModel
 import java.text.SimpleDateFormat
 import java.util.*
@@ -30,7 +35,7 @@ fun BirdHistoryScreen(
 ) {
     val state by viewModel.uiState.collectAsState()
     var showDeleteAllDialog by remember { mutableStateOf(false) }
-    
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -41,12 +46,20 @@ fun BirdHistoryScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = { showDeleteAllDialog = true }) {
-                        Icon(Icons.Default.Delete, contentDescription = "Delete All")
+                    if (state.totalRecords > 0) {
+                        IconButton(onClick = { showDeleteAllDialog = true }) {
+                            Icon(Icons.Default.Delete, contentDescription = "Delete All")
+                        }
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                    titleContentColor = MaterialTheme.colorScheme.onSurface
+                )
             )
-        }
+        },
+        containerColor = MaterialTheme.colorScheme.surfaceContainer,
+        contentColor = MaterialTheme.colorScheme.onSurface
     ) { paddingValues ->
         Column(
             modifier = Modifier
@@ -59,7 +72,7 @@ fun BirdHistoryScreen(
                 uniqueSpecies = state.uniqueSpecies,
                 modifier = Modifier.padding(16.dp)
             )
-            
+
             // Loading state
             if (state.isLoading) {
                 Box(
@@ -85,11 +98,10 @@ fun BirdHistoryScreen(
                     items(state.records, key = { it.timestamp }) { record ->
                         RecordCard(
                             record = record,
-                            onDelete = { viewModel.deleteRecord(record) },
-                            onClick = { 
+                            onClick = {
                                 navController.navigate(
                                     AppDestination.RecordDetail(record.timestamp)
-                                ) 
+                                )
                             }
                         )
                     }
@@ -98,7 +110,7 @@ fun BirdHistoryScreen(
             }
         }
     }
-    
+
     // Delete all confirmation dialog
     if (showDeleteAllDialog) {
         AlertDialog(
@@ -126,29 +138,28 @@ fun BirdHistoryScreen(
 
 @Composable
 fun StatisticsCard(
+    modifier: Modifier = Modifier,
     totalRecords: Int,
-    uniqueSpecies: Int,
-    modifier: Modifier = Modifier
+    uniqueSpecies: Int
 ) {
-    Card(
-        modifier = modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .background(
+                MaterialTheme.colorScheme.surface,
+                RoundedCornerShape(16.dp)
+            )
+            .padding(8.dp),
+        horizontalArrangement = Arrangement.SpaceEvenly
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceEvenly
-        ) {
-            StatisticItem(
-                label = "Total Records",
-                value = totalRecords.toString()
-            )
-            StatisticItem(
-                label = "Unique Species",
-                value = uniqueSpecies.toString()
-            )
-        }
+        StatisticItem(
+            label = "Total Records",
+            value = totalRecords.toString()
+        )
+        StatisticItem(
+            label = "Unique Species",
+            value = uniqueSpecies.toString()
+        )
     }
 }
 
@@ -178,121 +189,83 @@ fun StatisticItem(
 fun EmptyStateCard(
     modifier: Modifier = Modifier
 ) {
-    Card(
-        modifier = modifier,
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(16.dp))
+            .padding(24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            Text(
-                text = "🐦",
-                style = MaterialTheme.typography.displayLarge
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-            Text(
-                text = "No Records Saved Yet",
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = "Start recording to save bird sound records!",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
+        Text(
+            text = "🐦",
+            style = MaterialTheme.typography.displayLarge
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        Text(
+            text = "No Records Saved Yet",
+            style = MaterialTheme.typography.headlineSmall,
+            fontWeight = FontWeight.Bold
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            text = "Start recording to save bird sound records!",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
     }
 }
 
+@SuppressLint("DefaultLocale")
 @Composable
 fun RecordCard(
+    modifier: Modifier = Modifier,
     record: Record,
-    onDelete: () -> Unit,
-    onClick: () -> Unit = {},
-    modifier: Modifier = Modifier
+    onClick: () -> Unit = {}
 ) {
-    Card(
-        modifier = modifier
-            .fillMaxWidth()
-            .clickable { onClick() },
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp)
-        ) {
-            // Title: Date - Location info
-            val dateFormat = SimpleDateFormat("MMM d", Locale.getDefault())
-            val dateStr = dateFormat.format(Date(record.timestamp))
-            
-            val locationStr = if (record.locationName != null) {
-                record.locationName
-            } else if (record.latitude != null && record.longitude != null) {
-                "${String.format("%.4f", record.latitude)}, ${String.format("%.4f", record.longitude)}"
-            } else {
-                "Unknown location"
-            }
-            
-            Text(
-                text = "$dateStr - $locationStr",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-            
-            Spacer(modifier = Modifier.height(4.dp))
-            
-            // Second row: Time and birds count
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                // Time
-                val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
-                val timeStr = timeFormat.format(Date(record.timestamp))
-                Text(
-                    text = timeStr,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+    val dateFormat = SimpleDateFormat("MMM d", Locale.getDefault())
+    val dateStr = dateFormat.format(Date(record.timestamp))
+    val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
+    val timeStr = timeFormat.format(Date(record.timestamp))
+    val locationStr = record.locationName
+        ?: if (record.latitude != null && record.longitude != null) {
+            "${String.format("%.4f", record.latitude)}, ${
+                String.format(
+                    "%.4f",
+                    record.longitude
                 )
-                
-                // Birds count with badge
-                Row(
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "${record.birds.size} birds",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    
-                    Spacer(modifier = Modifier.width(8.dp))
-                    
-                    Surface(
-                        shape = RoundedCornerShape(12.dp),
-                        color = MaterialTheme.colorScheme.primaryContainer
-                    ) {
-                        Text(
-                            text = "${record.birds.size}",
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                }
-            }
+            }"
+        } else {
+            "Unknown location"
         }
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() }
+            .background(MaterialTheme.colorScheme.surface)
+            .padding(16.dp)
+    ) {
+        Text(
+            text = "$dateStr - $locationStr",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
+        Spacer(modifier = Modifier.height(4.dp))
+        Text(
+            text = "$timeStr • ${record.birds.size} birds",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
     }
 }
 
-private fun formatTimestamp(timestamp: Long): String {
-    val date = Date(timestamp)
-    val format = SimpleDateFormat("MMM dd, yyyy HH:mm", Locale.getDefault())
-    return format.format(date)
+@Preview
+@Composable
+private fun Preview() {
+    BirdHistoryScreen(
+        navController = LocalNavController.current
+    )
 }

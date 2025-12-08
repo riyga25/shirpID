@@ -96,7 +96,10 @@ fun StartScreen(
         }
     }
 
-    Scaffold { paddings ->
+    Scaffold(
+        containerColor = MaterialTheme.colorScheme.surfaceContainer,
+        contentColor = MaterialTheme.colorScheme.onSurface
+    ) { paddings ->
         Box(
             modifier = Modifier
                 .padding(paddings)
