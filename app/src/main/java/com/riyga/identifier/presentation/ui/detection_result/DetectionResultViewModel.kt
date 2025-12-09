@@ -4,6 +4,7 @@ import android.content.Context
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.riyga.identifier.R
 import com.riyga.identifier.data.birds.RecordRepository
 import com.riyga.identifier.data.models.LocationData
 import com.riyga.identifier.data.models.Record
@@ -75,7 +76,7 @@ class BirdDetectionResultViewModel(
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
                     isSaving = false,
-                    saveError = "Failed to save record: ${e.message}"
+                    saveError = context.getString(R.string.failed_to_save_record, e.message)
                 )
                 Log.e("BirdDetectionResultViewModel", "Error saving record: ${e.message}")
             }

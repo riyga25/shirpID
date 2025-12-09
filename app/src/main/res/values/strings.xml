@@ -1,17 +1,67 @@
 <resources>
     <string name="app_name" translatable="false">Sound Classifier</string>
+    
     <!-- StartScreen Permissions -->
-    <string name="permission_audio_request">Разрешить запись аудио</string>
-    <string name="permission_location_request">Разрешить доступ к местоположению</string>
-    <string name="permission_notification_request">Разрешить уведомления</string>
-
+    <string name="permission_audio_request">Allow audio recording</string>
+    <string name="permission_location_request">Allow location access</string>
+    <string name="permission_notification_request">Allow notifications</string>
+    
     <!-- StartScreen Main Action -->
-    <string name="start_record_desc">Начать запись</string>
+    <string name="start_record_desc">Start recording</string>
     <string name="sound_id_title">Sound ID</string>
-
+    <string name="show_history">Show history</string>
+    
+    <!-- StartScreen Location Error -->
+    <string name="location_error">Error: %s</string>
+    <string name="try_again">Try Again</string>
+    
     <!-- Settings Redirect Dialog -->
-    <string name="permission_settings_dialog_title">Требуется разрешение</string>
-    <string name="permission_settings_dialog_message">Для корректной работы приложения необходимо предоставить разрешения. Вы можете сделать это в настройках приложения.</string>
-    <string name="cancel">Отмена</string>
-    <string name="go_to_settings">В настройки</string>
+    <string name="permission_settings_dialog_title">Permission required</string>
+    <string name="permission_settings_dialog_message">Permissions are required for the app to work correctly. You can grant them in the app settings.</string>
+    <string name="cancel">Cancel</string>
+    <string name="go_to_settings">Go to settings</string>
+    
+    <!-- ProgressScreen -->
+    <string name="stop_recording">Stop Recording</string>
+    <string name="cancel_recording">Cancel</string>
+    
+    <!-- DetectionResultScreen -->
+    <string name="detection_results">Detection Results</string>
+    <string name="back_to_start">Back to Start</string>
+    <string name="recording_location">📍 Recording Location</string>
+    <string name="no_birds_detected">No Birds Detected</string>
+    <string name="detected_birds">Detected Birds (%d)</string>
+    <string name="no_birds_detected_message">Try recording in a different location or at a different time when birds are more active.</string>
+    <string name="save_birds">Save Birds</string>
+    <string name="saving">Saving...</string>
+    <string name="saved">Saved!</string>
+    <string name="new_recording">New Recording</string>
+    
+    <!-- RecordsHistoryScreen -->
+    <string name="saved_records">Saved Records</string>
+    <string name="back">Back</string>
+    <string name="delete_all">Delete All</string>
+    <string name="delete_all_records">Delete All Records</string>
+    <string name="delete_all_records_confirmation">Are you sure you want to delete all saved records? This action cannot be undone.</string>
+    <string name="total_records">Total Records</string>
+    <string name="unique_species">Unique Species</string>
+    <string name="no_records_saved_yet">No Records Saved Yet</string>
+    <string name="start_recording_to_save">Start recording to save bird sound records!</string>
+    <string name="birds">birds</string>
+    <string name="unknown_location">Unknown location</string>
+    
+    <!-- RecordDetailScreen -->
+    <string name="record_details">Record Details</string>
+    <string name="coordinates" formatted="false">Coordinates: %s, %s</string>
+    <string name="recorded">Recorded: %s</string>
+    <string name="no_birds_in_recording">No birds detected in this recording</string>
+    
+    <!-- Error Messages -->
+    <string name="failed_to_save_record">Failed to save record: %s</string>
+    <string name="error_loading_labels">Error loading labels: %s</string>
+    
+    <!-- Settings -->
+    <string name="settings">Settings</string>
+    <string name="language">Language</string>
+    <string name="selected">Selected</string>
 </resources>

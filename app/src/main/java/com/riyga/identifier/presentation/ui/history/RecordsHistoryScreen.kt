@@ -15,6 +15,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
@@ -26,6 +27,7 @@ import com.riyga.identifier.utils.LocalNavController
 import org.koin.compose.viewmodel.koinViewModel
 import java.text.SimpleDateFormat
 import java.util.*
+import com.riyga.identifier.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -39,16 +41,16 @@ fun BirdHistoryScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Saved Records") },
+                title = { Text(stringResource(R.string.saved_records)) },
                 navigationIcon = {
                     IconButton(onClick = { navController.navigateUp() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
                     }
                 },
                 actions = {
                     if (state.totalRecords > 0) {
                         IconButton(onClick = { showDeleteAllDialog = true }) {
-                            Icon(Icons.Default.Delete, contentDescription = "Delete All")
+                            Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.delete_all))
                         }
                     }
                 },
@@ -115,8 +117,8 @@ fun BirdHistoryScreen(
     if (showDeleteAllDialog) {
         AlertDialog(
             onDismissRequest = { showDeleteAllDialog = false },
-            title = { Text("Delete All Records") },
-            text = { Text("Are you sure you want to delete all saved records? This action cannot be undone.") },
+            title = { Text(stringResource(R.string.delete_all_records)) },
+            text = { Text(stringResource(R.string.delete_all_records_confirmation)) },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -124,12 +126,12 @@ fun BirdHistoryScreen(
                         showDeleteAllDialog = false
                     }
                 ) {
-                    Text("Delete All")
+                    Text(stringResource(R.string.delete_all))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showDeleteAllDialog = false }) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.cancel))
                 }
             }
         )
@@ -153,11 +155,11 @@ fun StatisticsCard(
         horizontalArrangement = Arrangement.SpaceEvenly
     ) {
         StatisticItem(
-            label = "Total Records",
+            label = stringResource(R.string.total_records),
             value = totalRecords.toString()
         )
         StatisticItem(
-            label = "Unique Species",
+            label = stringResource(R.string.unique_species),
             value = uniqueSpecies.toString()
         )
     }
@@ -203,13 +205,13 @@ fun EmptyStateCard(
         )
         Spacer(modifier = Modifier.height(16.dp))
         Text(
-            text = "No Records Saved Yet",
+            text = stringResource(R.string.no_records_saved_yet),
             style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.Bold
         )
         Spacer(modifier = Modifier.height(8.dp))
         Text(
-            text = "Start recording to save bird sound records!",
+            text = stringResource(R.string.start_recording_to_save),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -236,7 +238,7 @@ fun RecordCard(
                 )
             }"
         } else {
-            "Unknown location"
+            stringResource(R.string.unknown_location)
         }
 
     Column(
@@ -255,7 +257,7 @@ fun RecordCard(
         )
         Spacer(modifier = Modifier.height(4.dp))
         Text(
-            text = "$timeStr • ${record.birds.size} birds",
+            text = "$timeStr • ${record.birds.size} ${stringResource(R.string.birds)}",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )

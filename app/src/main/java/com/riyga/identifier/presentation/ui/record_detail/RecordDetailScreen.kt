@@ -12,6 +12,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -21,6 +22,7 @@ import com.riyga.identifier.presentation.ui.history.BirdHistoryViewModel
 import org.koin.compose.viewmodel.koinViewModel
 import java.text.SimpleDateFormat
 import java.util.*
+import com.riyga.identifier.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -45,10 +47,10 @@ fun RecordDetailScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Record Details") },
+                title = { Text(stringResource(R.string.record_details)) },
                 navigationIcon = {
                     IconButton(onClick = { navController.navigateUp() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
                     }
                 },
                 actions = {
@@ -60,7 +62,7 @@ fun RecordDetailScreen(
                             }
                         }
                     ) {
-                        Icon(Icons.Default.Delete, contentDescription = "Delete All")
+                        Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.delete_all))
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -87,7 +89,7 @@ fun RecordDetailScreen(
                     .padding(paddingValues),
                 contentAlignment = Alignment.Center
             ) {
-                Text("Record not found")
+                Text(stringResource(R.string.no_birds_in_recording))
             }
         } else {
             LazyColumn(
@@ -116,23 +118,22 @@ fun RecordDetailScreen(
                                 Spacer(modifier = Modifier.height(4.dp))
                             }
                             Text(
-                                text = "Coordinates: ${
+                                text = stringResource(R.string.coordinates, 
                                     String.format(
                                         "%.4f",
                                         record!!.latitude
-                                    )
-                                }, ${String.format("%.4f", record!!.longitude)}",
+                                    ), 
+                                    String.format("%.4f", record!!.longitude)),
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                             Spacer(modifier = Modifier.height(8.dp))
                             Text(
-                                text = "Recorded: ${
+                                text = stringResource(R.string.recorded, 
                                     SimpleDateFormat(
                                         "MMM dd, yyyy HH:mm",
                                         Locale.getDefault()
-                                    ).format(Date(record!!.timestamp))
-                                }",
+                                    ).format(Date(record!!.timestamp))),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
@@ -143,7 +144,7 @@ fun RecordDetailScreen(
                 if (record?.birds.isNullOrEmpty()) {
                     item {
                         Text(
-                            text = "No birds detected in this recording",
+                            text = stringResource(R.string.no_birds_in_recording),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(top = 12.dp)

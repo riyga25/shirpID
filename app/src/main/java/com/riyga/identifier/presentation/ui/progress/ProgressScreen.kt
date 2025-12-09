@@ -50,6 +50,7 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -271,7 +272,7 @@ fun RecordingControls(
             modifier = Modifier.align(Alignment.CenterStart)
         ) {
             Text(
-                text = "Отменить",
+                text = stringResource(R.string.cancel_recording),
                 style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
                 color = MaterialTheme.colorScheme.onSurface
             )
@@ -288,7 +289,7 @@ fun RecordingControls(
         ) {
             Icon(
                 painter = painterResource(R.drawable.ic_stop),
-                contentDescription = "Stop Recording",
+                contentDescription = stringResource(R.string.stop_recording),
                 tint = MaterialTheme.colorScheme.onError,
                 modifier = Modifier.size(30.dp)
             )

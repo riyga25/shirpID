@@ -31,6 +31,7 @@ navigationCompose = "2.9.6"
 # Other libraries
 uriKmp = "0.0.21"
 playServicesLocation = "21.3.0"
+datastore = "1.1.1"
 kotlinxCoroutinesPlayServices = "1.10.2"
 koin = "4.1.1"
 kotlinxSerializationJson = "1.9.0"
@@ -70,6 +71,7 @@ androidx-navigation-compose = { group = "androidx.navigation", name = "navigatio
 # Other libraries
 eygraber-uri-kmp = { group = "com.eygraber", name = "uri-kmp", version.ref = "uriKmp" }
 google-android-gms-playServicesLocation = { group = "com.google.android.gms", name = "play-services-location", version.ref = "playServicesLocation" }
+androidx-datastore-preferences = { group = "androidx.datastore", name = "datastore-preferences", version.ref = "datastore" }
 kotlinx-coroutines-playServices = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-play-services", version.ref = "kotlinxCoroutinesPlayServices" }
 insert-koin-koinCore = { group = "io.insert-koin", name = "koin-core", version.ref = "koin" }
 insert-koin-koinAndroid = { group = "io.insert-koin", name = "koin-android", version.ref = "koin" }

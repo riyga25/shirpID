@@ -14,6 +14,7 @@ import com.riyga.identifier.presentation.ui.detection_result.DetectedBird
 import com.riyga.identifier.presentation.ui.history.BirdHistoryScreen
 import com.riyga.identifier.presentation.ui.progress.ProgressScreen
 import com.riyga.identifier.presentation.ui.record_detail.RecordDetailScreen
+import com.riyga.identifier.presentation.ui.settings.SettingsScreen
 import com.riyga.identifier.presentation.ui.start.StartScreen
 import com.riyga.identifier.theme.AppTheme
 import com.riyga.identifier.utils.LocalNavController
@@ -56,6 +57,9 @@ sealed interface AppDestination {
 
     @Serializable
     data class RecordDetail(val recordId: Long) : AppDestination
+    
+    @Serializable
+    data object Settings : AppDestination
 }
 
 @Composable
@@ -65,6 +69,7 @@ fun AppNavHost(
     NavHost(navController = navController, startDestination = AppDestination.Start) {
         composable<AppDestination.Start> {
             StartScreen(
+                navController = navController,
                 onStart = { location ->
                     navController.navigate(
                         AppDestination.Progress(location)
@@ -128,6 +133,10 @@ fun AppNavHost(
                 navController = navController,
                 recordId = recordId
             )
+        }
+        
+        composable<AppDestination.Settings> {
+            SettingsScreen(navController = navController)
         }
     }
 }

@@ -13,6 +13,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -22,6 +23,7 @@ import com.riyga.identifier.data.models.LocationData
 import com.riyga.identifier.presentation.models.LocationInfo
 import com.riyga.identifier.presentation.ui.AppDestination
 import org.koin.compose.viewmodel.koinViewModel
+import com.riyga.identifier.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -43,12 +45,12 @@ fun BirdDetectionResultScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Detection Results") },
+                title = { Text(stringResource(R.string.detection_results)) },
                 navigationIcon = {
                     IconButton(onClick = { 
                         navController.popBackStack(AppDestination.Start, inclusive = false)
                     }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back to Start")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back_to_start))
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -78,7 +80,7 @@ fun BirdDetectionResultScreen(
             
             // Results header
             Text(
-                text = if (detectedBirds.isEmpty()) "No Birds Detected" else "Detected Birds (${detectedBirds.size})",
+                text = if (detectedBirds.isEmpty()) stringResource(R.string.no_birds_detected) else stringResource(R.string.detected_birds, detectedBirds.size),
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(bottom = 16.dp)
@@ -134,7 +136,7 @@ fun LocationInfoCard(
             modifier = Modifier.padding(16.dp)
         ) {
             Text(
-                text = "📍 Recording Location",
+                text = stringResource(R.string.recording_location),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )
@@ -238,14 +240,14 @@ fun EmptyDetectionCard(
             )
             Spacer(modifier = Modifier.height(16.dp))
             Text(
-                text = "No Birds Detected",
+                text = stringResource(R.string.no_birds_detected),
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = "Try recording in a different location or at a different time when birds are more active.",
+                text = stringResource(R.string.no_birds_detected_message),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center
@@ -296,11 +298,11 @@ fun ActionButtons(
                             strokeWidth = 2.dp
                         )
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("Saving...")
+                        Text(stringResource(R.string.saving))
                     } else {
                         Icon(Icons.Default.Save, contentDescription = null)
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("Save Birds")
+                        Text(stringResource(R.string.save_birds))
                     }
                 }
             }
@@ -317,7 +319,7 @@ fun ActionButtons(
                 ) {
                     Icon(Icons.Default.Check, contentDescription = null)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Saved!")
+                    Text(stringResource(R.string.saved))
                 }
             }
             
@@ -326,7 +328,7 @@ fun ActionButtons(
                 onClick = onNewRecording,
                 modifier = Modifier.weight(1f)
             ) {
-                Text("New Recording")
+                Text(stringResource(R.string.new_recording))
             }
         }
     }

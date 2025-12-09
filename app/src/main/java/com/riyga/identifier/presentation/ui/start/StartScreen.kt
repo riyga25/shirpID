@@ -12,6 +12,8 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -30,6 +32,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.navigation.NavController
 import com.riyga.identifier.R
 import com.riyga.identifier.data.models.LocationData
 import org.koin.compose.viewmodel.koinViewModel
@@ -44,8 +47,10 @@ fun openAppSettings(context: Context) {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun StartScreen(
+    navController: NavController,
     onStart: (location: LocationData) -> Unit = {},
     onShowHistory: () -> Unit = {},
     viewModel: StartScreenViewModel = koinViewModel()
@@ -97,6 +102,25 @@ fun StartScreen(
     }
 
     Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text(stringResource(R.string.app_name)) },
+                actions = {
+                    IconButton(onClick = { 
+                        navController.navigate(com.riyga.identifier.presentation.ui.AppDestination.Settings)
+                    }) {
+                        Icon(
+                            imageVector = Icons.Default.Settings,
+                            contentDescription = stringResource(R.string.settings)
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                    titleContentColor = MaterialTheme.colorScheme.onSurface
+                )
+            )
+        },
         containerColor = MaterialTheme.colorScheme.surfaceContainer,
         contentColor = MaterialTheme.colorScheme.onSurface
     ) { paddings ->
@@ -115,9 +139,12 @@ fun StartScreen(
                 if (uiState.isLoadingLocation) {
                     CircularProgressIndicator()
                 } else if (uiState.locationError != null) {
-                    Text("Error: ${uiState.locationError}", color = MaterialTheme.colorScheme.error)
+                    Text(
+                        stringResource(R.string.location_error, uiState.locationError ?: "-"),
+                        color = MaterialTheme.colorScheme.error
+                    )
                     Button(onClick = { viewModel.fetchLocationAndProceed() }) {
-                        Text("Try Again")
+                        Text(stringResource(R.string.try_again))
                     }
                 } else {
                     uiState.currentLocation?.let {
@@ -221,7 +248,7 @@ fun MainActionButton(
             onClick = onShowHistory,
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text("Show history")
+            Text(stringResource(R.string.show_history))
         }
     }
 }

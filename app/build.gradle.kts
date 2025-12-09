@@ -64,6 +64,7 @@ dependencies {
 
     implementation(libs.google.android.gms.playServicesLocation)
     implementation(libs.kotlinx.coroutines.playServices)
+    implementation(libs.androidx.datastore.preferences)
 
     implementation(libs.insert.koin.koinCore)
     implementation(libs.insert.koin.koinAndroid)

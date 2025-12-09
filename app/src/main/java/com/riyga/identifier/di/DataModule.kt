@@ -9,6 +9,7 @@ import com.riyga.identifier.data.location.LocationRepositoryImpl
 import com.riyga.identifier.data.network.GeocoderApiService
 import com.riyga.identifier.data.network.GeocoderDataSource
 import com.riyga.identifier.data.network.GeocoderDataSourceImpl
+import com.riyga.identifier.data.preferences.AppPreferences
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
@@ -20,6 +21,7 @@ import retrofit2.Retrofit
 val dataModule = module {
     // Database
     single { AppDatabase.getDatabase(androidContext()) }
+    single { AppPreferences(androidContext()) }
     single { get<AppDatabase>().recordDao() }
     
     // Repositories
