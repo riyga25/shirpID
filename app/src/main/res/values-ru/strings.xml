@@ -2,9 +2,12 @@
     <string name="app_name" translatable="false">Sound Classifier</string>
     
     <!-- StartScreen Permissions -->
-    <string name="permission_audio_request">Разрешить запись аудио</string>
+    <string name="permission_audio_request">Разрешить доступ у микрофону</string>
+    <string name="permission_audio_description">Необходимо для записи голосов птиц</string>
     <string name="permission_location_request">Разрешить доступ к местоположению</string>
+    <string name="permission_location_description">Местоположение используется для того чтобы повысить качество определения</string>
     <string name="permission_notification_request">Разрешить уведомления</string>
+    <string name="permission_notification_description">Используется для запуска сервиса, чтобы приложение работало корректно даже в свернутом виде</string>
     
     <!-- StartScreen Main Action -->
     <string name="start_record_desc">Начать запись</string>
@@ -64,4 +67,5 @@
     <string name="settings">Настройки</string>
     <string name="language">Язык</string>
     <string name="selected">Выбрано</string>
+    <string name="license">Лицензия</string>
 </resources>

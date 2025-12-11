@@ -21,7 +21,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.riyga.identifier.data.models.LocationData
 import com.riyga.identifier.presentation.models.LocationInfo
-import com.riyga.identifier.presentation.ui.AppDestination
+import com.riyga.identifier.presentation.ui.Route
 import org.koin.compose.viewmodel.koinViewModel
 import com.riyga.identifier.R
 
@@ -39,7 +39,7 @@ fun BirdDetectionResultScreen(
     
     // Handle back press - go to start screen
     BackHandler {
-        navController.popBackStack(AppDestination.Start, inclusive = false)
+        navController.popBackStack(Route.Start, inclusive = false)
     }
     
     Scaffold(
@@ -48,7 +48,7 @@ fun BirdDetectionResultScreen(
                 title = { Text(stringResource(R.string.detection_results)) },
                 navigationIcon = {
                     IconButton(onClick = { 
-                        navController.popBackStack(AppDestination.Start, inclusive = false)
+                        navController.popBackStack(Route.Start, inclusive = false)
                     }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back_to_start))
                     }
@@ -115,7 +115,7 @@ fun BirdDetectionResultScreen(
                 saveError = state.saveError,
                 onSave = { viewModel.saveRecord(detectedBirds, location, locationInfo, audioFilePath) },
                 onNewRecording = {
-                    navController.popBackStack(AppDestination.Start, inclusive = false)
+                    navController.popBackStack(Route.Start, inclusive = false)
                 }
             )
         }

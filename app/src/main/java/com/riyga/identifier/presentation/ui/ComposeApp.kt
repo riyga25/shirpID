@@ -14,6 +14,7 @@ import com.riyga.identifier.presentation.ui.detection_result.DetectedBird
 import com.riyga.identifier.presentation.ui.history.BirdHistoryScreen
 import com.riyga.identifier.presentation.ui.progress.ProgressScreen
 import com.riyga.identifier.presentation.ui.record_detail.RecordDetailScreen
+import com.riyga.identifier.presentation.ui.settings.LicenseScreen
 import com.riyga.identifier.presentation.ui.settings.SettingsScreen
 import com.riyga.identifier.presentation.ui.start.StartScreen
 import com.riyga.identifier.theme.AppTheme
@@ -37,15 +38,15 @@ fun ComposeApp() {
     }
 }
 
-sealed interface AppDestination {
+sealed interface Route {
     @Serializable
-    data object Start : AppDestination
+    data object Start : Route
 
     @Serializable
-    data class Progress(val location: LocationData) : AppDestination
+    data class Progress(val location: LocationData) : Route
 
     @Serializable
-    data object BirdHistory : AppDestination
+    data object BirdHistory : Route
 
     @Serializable
     data class BirdDetectionResult(
@@ -53,44 +54,47 @@ sealed interface AppDestination {
         val location: LocationData?,
         val locationInfo: LocationInfo?,
         val audioFilePath: String?
-    ) : AppDestination
+    ) : Route
 
     @Serializable
-    data class RecordDetail(val recordId: Long) : AppDestination
+    data class RecordDetail(val recordId: Long) : Route
     
     @Serializable
-    data object Settings : AppDestination
+    data object Settings : Route
+
+    @Serializable
+    data object License : Route
 }
 
 @Composable
 fun AppNavHost(
     navController: NavHostController
 ) {
-    NavHost(navController = navController, startDestination = AppDestination.Start) {
-        composable<AppDestination.Start> {
+    NavHost(navController = navController, startDestination = Route.Start) {
+        composable<Route.Start> {
             StartScreen(
                 navController = navController,
                 onStart = { location ->
                     navController.navigate(
-                        AppDestination.Progress(location)
+                        Route.Progress(location)
                     )
                 },
                 onShowHistory = {
                     navController.navigate(
-                        AppDestination.BirdHistory
+                        Route.BirdHistory
                     )
                 }
             )
         }
 
-        composableWithArgs<AppDestination.Progress>(
+        composableWithArgs<Route.Progress>(
             navType<LocationData>()
         ) { backStackEntry ->
             ProgressScreen(
-                location = backStackEntry.toRoute<AppDestination.Progress>().location,
+                location = backStackEntry.toRoute<Route.Progress>().location,
                 onNavigateToResults = { detectedBirds, location, locationInfo, audioFilePath ->
                     navController.navigate(
-                        AppDestination.BirdDetectionResult(
+                        Route.BirdDetectionResult(
                             detectedBirds = detectedBirds,
                             location = location,
                             locationInfo = locationInfo,
@@ -101,16 +105,16 @@ fun AppNavHost(
             )
         }
 
-        composable<AppDestination.BirdHistory> {
+        composable<Route.BirdHistory> {
             BirdHistoryScreen(navController = navController)
         }
 
-        composableWithArgs<AppDestination.BirdDetectionResult>(
+        composableWithArgs<Route.BirdDetectionResult>(
             navType<List<DetectedBird>>(),
             navType<LocationData?>(nullable = true),
             navType<LocationInfo?>(nullable = true)
         ) { backStackEntry ->
-            val route = backStackEntry.toRoute<AppDestination.BirdDetectionResult>()
+            val route = backStackEntry.toRoute<Route.BirdDetectionResult>()
             BirdDetectionResultScreen(
                 navController = navController,
                 detectedBirds = route.detectedBirds,
@@ -120,10 +124,10 @@ fun AppNavHost(
             )
         }
 
-        composableWithArgs<AppDestination.RecordDetail>(
+        composableWithArgs<Route.RecordDetail>(
             navType<Long>()
         ) { backStackEntry ->
-            val route = backStackEntry.toRoute<AppDestination.RecordDetail>()
+            val route = backStackEntry.toRoute<Route.RecordDetail>()
             val recordId = route.recordId
 
             // We need to fetch the record from the database
@@ -135,8 +139,12 @@ fun AppNavHost(
             )
         }
         
-        composable<AppDestination.Settings> {
+        composable<Route.Settings> {
             SettingsScreen(navController = navController)
+        }
+
+        composable<Route.License> {
+            LicenseScreen()
         }
     }
 }

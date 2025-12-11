@@ -6,6 +6,8 @@ import com.riyga.identifier.data.models.Language
 import com.riyga.identifier.data.preferences.AppPreferences
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -13,11 +15,12 @@ class SettingsViewModel(
     private val appPreferences: AppPreferences
 ) : ViewModel() {
 
-    val currentLanguage: StateFlow<String> = appPreferences.language
+    val currentLanguage: StateFlow<Language> = appPreferences.language
+        .map { Language.fromCode(it) }
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
-            initialValue = AppPreferences.DEFAULT_LANGUAGE
+            initialValue = Language.fromCode(AppPreferences.DEFAULT_LANGUAGE)
         )
 
     fun setLanguage(language: Language) {

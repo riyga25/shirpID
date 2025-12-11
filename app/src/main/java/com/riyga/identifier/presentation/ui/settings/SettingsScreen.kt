@@ -4,10 +4,12 @@ import android.app.LocaleManager
 import android.content.Context
 import android.os.Build
 import android.os.LocaleList
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
@@ -31,6 +33,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import com.riyga.identifier.R
 import com.riyga.identifier.data.models.Language
+import com.riyga.identifier.presentation.ui.Route
 import org.koin.compose.viewmodel.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -41,9 +44,6 @@ fun SettingsScreen(
 ) {
     val context = LocalContext.current
     val currentLanguage by viewModel.currentLanguage.collectAsStateWithLifecycle()
-
-    // Language options
-    val languages = Language.getAllLanguages()
 
     Scaffold(
         topBar = {
@@ -65,31 +65,52 @@ fun SettingsScreen(
         },
         containerColor = MaterialTheme.colorScheme.surfaceContainer
     ) { paddingValues ->
-        LazyColumn(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
+                .verticalScroll(rememberScrollState())
                 .padding(paddingValues)
-                .padding(16.dp)
         ) {
-            item {
-                Text(
-                    text = stringResource(id = R.string.language),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
-            }
+            LanguagesBlock(
+                currentLanguage = currentLanguage,
+                onChooseLanguage = {
+                    viewModel.setLanguage(it)
+                    updateAppLocale(context, it.code)
+                }
+            )
+            Spacer(Modifier.size(16.dp))
+            Text(
+                stringResource(R.string.license),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(MaterialTheme.colorScheme.surface)
+                    .clickable { navController.navigate(Route.License) }
+                    .padding(16.dp)
+            )
+        }
+    }
+}
 
-            items(languages) { language ->
-                LanguageItem(
-                    language = language,
-                    isSelected = language.code == currentLanguage,
-                    onClick = {
-                        viewModel.setLanguage(language)
-                        updateAppLocale(context, language.code)
-                    }
-                )
-            }
+@Composable
+private fun LanguagesBlock(
+    currentLanguage: Language,
+    onChooseLanguage: (Language) -> Unit
+) {
+    Column(
+        Modifier.background(MaterialTheme.colorScheme.surface).padding(vertical = 16.dp)
+    ) {
+        Text(
+            text = stringResource(id = R.string.language),
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(bottom = 8.dp).padding(horizontal = 16.dp)
+        )
+        Language.getAllLanguages().forEach { language ->
+            LanguageItem(
+                language = language,
+                isSelected = language == currentLanguage,
+                onClick = { onChooseLanguage(language) }
+            )
         }
     }
 }
@@ -112,7 +133,7 @@ fun LanguageItem(
             style = MaterialTheme.typography.bodyLarge,
             modifier = Modifier.weight(1f)
         )
-        
+
         if (isSelected) {
             Icon(
                 imageVector = Icons.Filled.Check,
@@ -126,7 +147,7 @@ fun LanguageItem(
 fun updateAppLocale(context: Context, languageCode: String) {
     val locale = java.util.Locale(languageCode)
     java.util.Locale.setDefault(locale)
-    
+
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
         val localeManager = context.getSystemService(Context.LOCALE_SERVICE) as LocaleManager
         localeManager.applicationLocales = LocaleList(locale)

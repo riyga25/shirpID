@@ -10,7 +10,10 @@ import androidx.activity.compose.LocalActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.*
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
@@ -19,12 +22,14 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.center
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -104,10 +109,16 @@ fun StartScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(stringResource(R.string.app_name)) },
+                title = {
+                    Image(
+                        painter = painterResource(R.drawable.app_logo),
+                        contentDescription = stringResource(R.string.settings),
+                        modifier = Modifier.size(32.dp).clip(CircleShape)
+                    )
+                },
                 actions = {
-                    IconButton(onClick = { 
-                        navController.navigate(com.riyga.identifier.presentation.ui.AppDestination.Settings)
+                    IconButton(onClick = {
+                        navController.navigate(com.riyga.identifier.presentation.ui.Route.Settings)
                     }) {
                         Icon(
                             imageVector = Icons.Default.Settings,
@@ -130,11 +141,7 @@ fun StartScreen(
                 .fillMaxSize()
         ) {
             Column(
-                modifier = Modifier
-                    .align(Alignment.TopCenter)
-                    .fillMaxWidth()
-                    .padding(top = 16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+                modifier = Modifier.padding(horizontal = 16.dp)
             ) {
                 if (uiState.isLoadingLocation) {
                     CircularProgressIndicator()
@@ -148,7 +155,7 @@ fun StartScreen(
                     }
                 } else {
                     uiState.currentLocation?.let {
-                        Text("${it.latitude}, ${it.longitude}")
+                        Text("${it.latitude}, ${it.longitude}", fontSize = 12.sp)
                     }
                 }
             }
@@ -156,7 +163,7 @@ fun StartScreen(
             Column(
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.align(Alignment.BottomCenter)
+                modifier = Modifier.align(Alignment.Center)
             ) {
                 if (!uiState.allPermissionsGranted) {
                     PermissionRequestSection(
@@ -200,22 +207,60 @@ fun PermissionRequestSection(
 ) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         if (!uiState.isAudioGranted) {
-            OutlinedButton(onClick = onAudioPermissionClick) {
-                Text(text = stringResource(R.string.permission_audio_request))
-            }
+            PermissionItem(
+                buttonText = stringResource(R.string.permission_audio_request),
+                description = stringResource(R.string.permission_audio_description),
+                onClick = onAudioPermissionClick
+            )
         }
         if (!uiState.isFineLocationGranted) {
-            OutlinedButton(onClick = onLocationPermissionClick) {
-                Text(text = stringResource(R.string.permission_location_request))
-            }
+            PermissionItem(
+                buttonText = stringResource(R.string.permission_location_request),
+                description = stringResource(R.string.permission_location_description),
+                onClick = onLocationPermissionClick
+            )
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && !uiState.isNotificationsGranted) {
-            OutlinedButton(onClick = onNotificationPermissionClick) {
-                Text(text = stringResource(R.string.permission_notification_request))
-            }
+            PermissionItem(
+                buttonText = stringResource(R.string.permission_notification_request),
+                description = stringResource(R.string.permission_notification_description),
+                onClick = onNotificationPermissionClick
+            )
+        }
+    }
+}
+
+@Composable
+private fun PermissionItem(
+    buttonText: String,
+    description: String,
+    onClick: () -> Unit
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+        modifier = Modifier
+            .padding(horizontal = 16.dp)
+            .fillMaxWidth()
+            .border(
+                1.dp,
+                MaterialTheme.colorScheme.onSurface,
+                RoundedCornerShape(16.dp)
+            )
+            .padding(16.dp)
+    ) {
+        Text(
+            text = description,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(horizontal = 16.dp)
+        )
+        OutlinedButton(onClick = onClick) {
+            Text(text = buttonText)
         }
     }
 }

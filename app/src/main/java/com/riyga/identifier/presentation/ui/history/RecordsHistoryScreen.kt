@@ -22,7 +22,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.riyga.identifier.data.models.Record
-import com.riyga.identifier.presentation.ui.AppDestination
+import com.riyga.identifier.presentation.ui.Route
 import com.riyga.identifier.utils.LocalNavController
 import org.koin.compose.viewmodel.koinViewModel
 import java.text.SimpleDateFormat
@@ -102,7 +102,7 @@ fun BirdHistoryScreen(
                             record = record,
                             onClick = {
                                 navController.navigate(
-                                    AppDestination.RecordDetail(record.timestamp)
+                                    Route.RecordDetail(record.timestamp)
                                 )
                             }
                         )
