@@ -7,9 +7,9 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:288252605731:android:4cf298427acddc3a9f4896",
+        "mobilesdk_app_id": "1:288252605731:android:f9d8f6d63dc382669f4896",
         "android_client_info": {
-          "package_name": "by.riyga.birdnet"
+          "package_name": "by.riyga.shirpid"
         }
       },
       "oauth_client": [],

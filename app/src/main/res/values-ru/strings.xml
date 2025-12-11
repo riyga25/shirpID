@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name" translatable="false">Sound Classifier</string>
+    <string name="app_name" translatable="false">ChirpID</string>
     
     <!-- StartScreen Permissions -->
     <string name="permission_audio_request">Разрешить доступ у микрофону</string>

@@ -10,14 +10,14 @@ plugins {
 
 android {
     compileSdk = libs.versions.compileSdk.get().toInt()
-    namespace = "com.riyga.identifier"
+    namespace = "by.riyga.shirpid"
 
     defaultConfig {
-        applicationId = "by.riyga.birdnet"
+        applicationId = "by.riyga.shirpid"
         minSdk = libs.versions.minSdk.get().toInt()
         targetSdk = libs.versions.targetSdk.get().toInt()
         versionCode = 1
-        versionName = "0.0.1"
+        versionName = "1.0.0-alpha01"
     }
 
     buildTypes {
