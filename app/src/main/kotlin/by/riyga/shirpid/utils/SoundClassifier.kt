@@ -36,11 +36,11 @@ class SoundClassifier(
 ) {
 
     companion object {
-        private const val TAG = "SoundClassifier"
+        private const val TAG = "ShirpID"
     }
 
-    private val _birdEvents = MutableSharedFlow<Pair<String, Float>>(extraBufferCapacity = 1)
-    val birdEvents: SharedFlow<Pair<String, Float>> get() = _birdEvents
+    private val _birdEvents = MutableSharedFlow<Pair<Int, Float>>(extraBufferCapacity = 1)
+    val birdEvents: SharedFlow<Pair<Int, Float>> get() = _birdEvents
 
     private val _isRecording = MutableStateFlow(false)
     val isRecording: StateFlow<Boolean> get() = _isRecording
@@ -273,17 +273,17 @@ class SoundClassifier(
                 bufferIndex =
                     updateCircularBuffer(circularBuffer, recordingBuffer, samples, bufferIndex)
 
-                silenceDetector.addSamples(recordingBuffer)
-
-                if (!silenceDetector.isSilence()) {
+//                silenceDetector.addSamples(recordingBuffer)
+//
+//                if (!silenceDetector.isSilence()) {
                     val inputBuffer = normalize(circularBuffer, bufferIndex)
                     val outputBuffer = FloatBuffer.allocate(modelNumClasses)
                     interpreter.run(inputBuffer, outputBuffer)
                     processModelOutput(outputBuffer)
                     delay(inferenceInterval)
-                } else {
-                    delay(200) // быстро проверяем тишину, но не нагружаем CPU
-                }
+//                } else {
+//                    delay(200) // быстро проверяем тишину, но не нагружаем CPU
+//                }
             }
         }
     }
@@ -334,11 +334,9 @@ class SoundClassifier(
             .filter { it.value >= options.confidenceThreshold }
 
         // 4. Обрабатываем каждое из выбранных предсказаний
-        topPredictions.forEachIndexed { i, prediction ->
-            val label = labelList[prediction.index]
-            val confidence = prediction.value
-
-            externalScope.launch { _birdEvents.emit(label to confidence) }
+        topPredictions.forEach { prediction ->
+            println("SoundClassifier detected bird ${prediction.index}")
+            externalScope.launch { _birdEvents.emit(prediction.index to prediction.value) }
         }
 
 //        val max = probList.withIndex().maxByOrNull { it.value }

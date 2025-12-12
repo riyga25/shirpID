@@ -1,6 +1,6 @@
-package by.riyga.shirpid.data.birds
+package by.riyga.shirpid.data.database
 
-import by.riyga.shirpid.data.database.RecordDao
+import by.riyga.shirpid.data.database.dao.RecordDao
 import by.riyga.shirpid.data.models.Record
 import kotlinx.coroutines.flow.Flow
 

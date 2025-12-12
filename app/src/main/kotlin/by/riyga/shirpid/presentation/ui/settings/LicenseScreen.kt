@@ -109,7 +109,7 @@ fun LicenseText() {
         style = TextStyle(
             fontSize = 16.sp,
             color = MaterialTheme.colorScheme.onSurface,
-            textAlign = TextAlign.Center,
+            textAlign = TextAlign.Start,
             lineHeight = 18.sp
         ),
         onClick = { offset ->

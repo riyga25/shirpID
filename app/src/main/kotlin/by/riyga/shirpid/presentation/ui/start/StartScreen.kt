@@ -275,7 +275,7 @@ fun MainActionButton(
         modifier = Modifier.padding(horizontal = 16.dp)
     ) {
         Text(
-            text = stringResource(R.string.sound_id_title),
+            text = stringResource(R.string.app_name),
             fontSize = 24.sp,
             color = MaterialTheme.colorScheme.onBackground
         )

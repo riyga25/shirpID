@@ -1,8 +1,8 @@
 package by.riyga.shirpid.data.models
 
-enum class Language(val code: String, val displayName: String) {
-    ENGLISH("en", "English"),
-    RUSSIAN("ru", "Русский");
+enum class Language(val code: String, val displayName: String, val assets: String) {
+    ENGLISH("en", "English", "labels_en.txt"),
+    RUSSIAN("ru", "Русский", "labels_ru.txt");
 
     companion object {
         fun fromCode(code: String): Language {

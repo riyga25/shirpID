@@ -17,6 +17,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -72,7 +73,7 @@ fun BirdHistoryScreen(
             StatisticsCard(
                 totalRecords = state.totalRecords,
                 uniqueSpecies = state.uniqueSpecies,
-                modifier = Modifier.padding(16.dp)
+                modifier = Modifier.padding(horizontal = 16.dp)
             )
 
             // Loading state
@@ -95,14 +96,14 @@ fun BirdHistoryScreen(
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     items(state.records, key = { it.timestamp }) { record ->
                         RecordCard(
                             record = record,
                             onClick = {
                                 navController.navigate(
-                                    Route.RecordDetail(record.timestamp)
+                                    Route.DetectionResult(record.timestamp, true)
                                 )
                             }
                         )
@@ -207,13 +208,9 @@ fun EmptyStateCard(
         Text(
             text = stringResource(R.string.no_records_saved_yet),
             style = MaterialTheme.typography.headlineSmall,
-            fontWeight = FontWeight.Bold
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(
-            text = stringResource(R.string.start_recording_to_save),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.fillMaxWidth(),
+            textAlign = TextAlign.Center
         )
     }
 }
@@ -245,7 +242,7 @@ fun RecordCard(
         modifier = Modifier
             .fillMaxWidth()
             .clickable { onClick() }
-            .background(MaterialTheme.colorScheme.surface)
+            .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(8.dp))
             .padding(16.dp)
     ) {
         Text(

@@ -8,6 +8,7 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import by.riyga.shirpid.data.models.Language
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 
 // At the top level of your kotlin file:
@@ -19,10 +20,10 @@ class AppPreferences(private val context: Context) {
         val DEFAULT_LANGUAGE = Language.ENGLISH.code
     }
 
-    val language: Flow<String> = context.dataStore.data
+    val language: Flow<Language> = context.dataStore.data
         .map { preferences ->
-            preferences[LANGUAGE_KEY] ?: DEFAULT_LANGUAGE
-        }
+            Language.fromCode(preferences[LANGUAGE_KEY] ?: DEFAULT_LANGUAGE)
+        }.distinctUntilChanged()
 
     suspend fun setLanguage(languageCode: String) {
         context.dataStore.edit { preferences ->

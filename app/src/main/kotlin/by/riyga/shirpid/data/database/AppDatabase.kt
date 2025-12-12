@@ -5,6 +5,8 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import android.content.Context
+import by.riyga.shirpid.data.database.converters.Converters
+import by.riyga.shirpid.data.database.dao.RecordDao
 import by.riyga.shirpid.data.models.Record
 
 @Database(

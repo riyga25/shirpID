@@ -25,7 +25,7 @@
     <string name="go_to_settings">Go to settings</string>
     
     <!-- ProgressScreen -->
-    <string name="stop_recording">Stop Recording</string>
+    <string name="stop_recording">Save</string>
     <string name="cancel_recording">Cancel</string>
     
     <!-- DetectionResultScreen -->

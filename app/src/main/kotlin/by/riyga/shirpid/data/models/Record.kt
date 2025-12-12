@@ -2,7 +2,6 @@ package by.riyga.shirpid.data.models
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
-import by.riyga.shirpid.presentation.ui.detection_result.DetectedBird
 import kotlinx.serialization.Serializable
 
 @Entity(tableName = "records")

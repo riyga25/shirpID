@@ -1,103 +1,85 @@
 package by.riyga.shirpid.presentation.ui.detection_result
 
-import android.content.Context
-import android.util.Log
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import by.riyga.shirpid.R
-import by.riyga.shirpid.data.birds.RecordRepository
-import by.riyga.shirpid.data.models.LocationData
+import by.riyga.shirpid.data.LabelsRepository
+import by.riyga.shirpid.data.database.RecordRepository
 import by.riyga.shirpid.data.models.Record
-import by.riyga.shirpid.presentation.models.LocationInfo
-import by.riyga.shirpid.utils.toStringLocation
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import by.riyga.shirpid.presentation.models.IdentifiedBird
+import by.riyga.shirpid.utils.BaseViewModel
+import by.riyga.shirpid.utils.UiEffect
+import by.riyga.shirpid.utils.UiEvent
+import by.riyga.shirpid.utils.UiState
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 
-@Serializable
-data class DetectedBird(
-    val name: String,
-    val confidence: Float
-)
-
-data class BirdDetectionResultState(
-    val isSaving: Boolean = false,
-    val isSaved: Boolean = false,
-    val saveError: String? = null
-)
-
-class BirdDetectionResultViewModel(
+class DetectionResultViewModel(
+    private val recordId: Long,
     private val recordRepository: RecordRepository,
-    private val context: Context
-) : ViewModel() {
-    
-    private val _uiState = MutableStateFlow(BirdDetectionResultState())
-    val uiState: StateFlow<BirdDetectionResultState> = _uiState.asStateFlow()
-    
-    fun saveRecord(
-        detectedBirds: List<DetectedBird>,
-        location: LocationData?,
-        locationInfo: LocationInfo?,
-        audioFilePath: String?
-    ) {
+    private val labelsRepository: LabelsRepository
+) : BaseViewModel<DetectionResultContract.State, DetectionResultContract.Effect, DetectionResultContract.Event>() {
+
+    override fun createInitialState(): DetectionResultContract.State =
+        DetectionResultContract.State()
+
+    init {
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isSaving = true, saveError = null)
-            
-            try {
-                // Load labels to map bird names to indices
-                // In a real implementation, this should be cached or loaded once
-                val labels = loadLabels()
-                
-                // Map detected bird names to their indices in the labels list
-                val birdIndices = detectedBirds.mapNotNull { detectedBird ->
-                    val index = labels.indexOfFirst { it == detectedBird.name }
-                    if (index >= 0) index else null
+            setState { copy(loading = true) }
+            val record = recordRepository.getRecordByTimestamp(recordId)
+
+            if (record != null) {
+                setState {
+                    copy(
+                        record = record,
+                        loading = false,
+                        birds = record.birds.map {
+                            IdentifiedBird(
+                                index = it.index,
+                                name = labelsRepository.getLabel(it.index),
+                                confidence = it.confidence
+                            )
+                        }
+                    )
                 }
-                
-                // Create record with bird indices
-                val record = Record(
-                    birds = detectedBirds,
-                    latitude = location?.latitude,
-                    longitude = location?.longitude,
-                    locationName = locationInfo?.let { "${it.city}, ${it.toStringLocation()}" },
-                    audioFilePath = audioFilePath
-                )
-                
-                recordRepository.insertRecord(record)
-                
-                _uiState.value = _uiState.value.copy(
-                    isSaving = false,
-                    isSaved = true
-                )
-                
-                Log.d("BirdDetectionResultViewModel", "Saved record with ${birdIndices.size} birds")
-            } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(
-                    isSaving = false,
-                    saveError = context.getString(R.string.failed_to_save_record, e.message)
-                )
-                Log.e("BirdDetectionResultViewModel", "Error saving record: ${e.message}")
+            } else {
+                setState {
+                    copy(
+                        error = true,
+                        loading = false
+                    )
+                }
             }
         }
     }
-    
-    fun clearSaveState() {
-        _uiState.value = _uiState.value.copy(
-            isSaved = false,
-            saveError = null
-        )
-    }
-    
-    private fun loadLabels(): List<String> {
-        return try {
-            context.assets.open("labels_en.txt").bufferedReader().use { reader ->
-                reader.readLines()
+
+    override fun handleEvent(event: DetectionResultContract.Event) {
+        super.handleEvent(event)
+        when(event) {
+            is DetectionResultContract.Event -> {
+                viewModelScope.launch {
+                    currentState.record?.timestamp?.let {
+                        recordRepository.deleteRecordByTimestamp(it)
+                    }
+                }
+                setEffect { DetectionResultContract.Effect.RecordRemoved }
             }
-        } catch (e: Exception) {
-            Log.e("BirdDetectionResultViewModel", "Error loading labels: ${e.message}")
-            emptyList()
         }
+    }
+}
+
+
+class DetectionResultContract {
+    data class State(
+        val loading: Boolean = false,
+        val error: Boolean = false,
+        val record: Record? = null,
+        val birds: List<IdentifiedBird> = emptyList()
+    ) : UiState
+
+    sealed class Effect : UiEffect {
+        object RecordRemoved: Effect()
+    }
+
+    sealed class Event : UiEvent {
+        object RemoveRecord: Event()
     }
 }

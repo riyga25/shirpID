@@ -1,4 +1,4 @@
-package by.riyga.shirpid.data.database
+package by.riyga.shirpid.data.database.dao
 
 import androidx.room.*
 import by.riyga.shirpid.data.models.Record

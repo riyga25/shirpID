@@ -1,7 +1,7 @@
-package by.riyga.shirpid.data.database
+package by.riyga.shirpid.data.database.converters
 
 import androidx.room.TypeConverter
-import by.riyga.shirpid.presentation.ui.detection_result.DetectedBird
+import by.riyga.shirpid.data.models.DetectedBird
 import kotlinx.serialization.json.Json
 
 class Converters {

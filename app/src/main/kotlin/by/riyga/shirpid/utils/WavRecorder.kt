@@ -14,7 +14,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-private const val APP_NAME = "SoundClassifier"
+private const val APP_NAME = "ShirpID"
 private const val FILE_NAME_FORMAT = "yyyy-MM-dd HH_mm_ss"
 
 class WavRecorder(

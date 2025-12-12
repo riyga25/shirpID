@@ -16,17 +16,13 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -36,49 +32,38 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import by.riyga.shirpid.R
-import by.riyga.shirpid.data.models.LocationData
-import by.riyga.shirpid.presentation.models.LocationInfo
-import by.riyga.shirpid.presentation.ui.detection_result.DetectedBird
+import by.riyga.shirpid.presentation.models.IdentifiedBird
+import by.riyga.shirpid.presentation.ui.Route
 import by.riyga.shirpid.utils.LocalNavController
 import by.riyga.shirpid.utils.RecognizeService
-import kotlinx.coroutines.delay
 import by.riyga.shirpid.utils.toStringLocation
-import kotlinx.coroutines.isActive
+import kotlinx.coroutines.flow.Flow
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
 fun ProgressScreen(
-    location: LocationData,
-    onNavigateToResults: (List<DetectedBird>, LocationData?, LocationInfo?, String?) -> Unit,
     viewModel: ProgressViewModel = koinViewModel()
 ) {
     val context = LocalContext.current
     val navController = LocalNavController.current
     val state by viewModel.uiState.collectAsStateWithLifecycle()
-    var identifiedBirds by remember { mutableStateOf<Set<String>>(emptySet()) }
-    val birdConfidences = remember { mutableStateMapOf<String, Float>() }
-    val highlightedBirds = remember { mutableStateMapOf<String, Boolean>() }
+    val effect by viewModel.effect.collectAsStateWithLifecycle(null)
     val haptic = LocalHapticFeedback.current
-    val timer = remember { mutableStateOf("00:00.0") }
     val lazyListState = rememberLazyListState()
 
     var service: RecognizeService? by remember { mutableStateOf(null) }
@@ -89,11 +74,14 @@ fun ProgressScreen(
                 val localBinder = binder as RecognizeService.LocalBinder
                 service = localBinder.getService()
                 isBound = true
+
                 // Как только сервис привязан, запускаем его с координатами
-                service?.startForegroundService(
-                    location.latitude.toFloat(),
-                    location.longitude.toFloat()
-                )
+                if (state.location != null) {
+                    service?.startForegroundService(
+                        state.location?.latitude?.toFloat() ?: 0F,
+                        state.location?.longitude?.toFloat() ?: 0F
+                    )
+                }
             }
 
             override fun onServiceDisconnected(name: ComponentName) {
@@ -116,73 +104,52 @@ fun ProgressScreen(
         }
     }
 
-    // Запуск таймера
-    LaunchedEffect(isBound) { // Перезапускаем таймер, если сервис привязан (или по др. условию)
-        if (isBound) { // Начинаем таймер, только когда сервис активен
-            val startTime = System.currentTimeMillis()
-            while (this.isActive) { // isActive из корутины
-                val elapsed = System.currentTimeMillis() - startTime
-                timer.value = String.format(
-                    "%02d:%02d.%d",
-                    (elapsed / 1000) / 60,
-                    (elapsed / 1000) % 60,
-                    (elapsed % 1000) / 100
+    LaunchedEffect(effect) {
+        when(val castEffect = effect) {
+            is ProgressContract.Effect.NotifyByHaptic -> {
+                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+            }
+            is ProgressContract.Effect.ShowResult -> {
+                navController.popBackStack()
+                navController.navigate(Route.DetectionResult(castEffect.id, false))
+            }
+            else -> {}
+        }
+    }
+
+    LaunchedEffect(isBound) {
+        if (isBound) {
+            viewModel.setEvent(ProgressContract.Event.StartTimer())
+            RecognizeService.birdsEvents.collect { (bird, percent) ->
+                viewModel.setEvent(
+                    ProgressContract.Event.AddIdentification(bird, percent)
                 )
-                delay(100)
             }
         } else {
-            timer.value = "00:00.0" // Сброс таймера, если сервис не активен
+            viewModel.setEvent(ProgressContract.Event.StopTimer())
         }
     }
 
-    // Сбор событий от сервиса
-    LaunchedEffect(isBound) { // Перезапускаем сборщик, если меняется состояние isBound
-        if (isBound) {
-            RecognizeService.birdsEvents.collect { (bird, percent) ->
-                if (percent * 100 > 30) {
-                    if (bird !in identifiedBirds) {
-                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                        identifiedBirds = identifiedBirds + bird
-                    }
-                    // Track the highest confidence for each bird
-                    birdConfidences[bird] = maxOf(birdConfidences[bird] ?: 0f, percent)
-                    highlightedBirds[bird] = true
-                    delay(1000) // Эта задержка здесь ок для UI эффекта
-                    highlightedBirds[bird] = false
-                } else {
-                    println("ProgressScreen: less than 30% -> $percent = $bird")
-                }
-            }
-        }
-    }
-
-    LaunchedEffect(identifiedBirds.size) {
-        if (identifiedBirds.size > 1) {
-            lazyListState.animateScrollToItem(identifiedBirds.size - 1)
+    LaunchedEffect(state.birds.size) {
+        if (state.birds.size > 1) {
+            lazyListState.animateScrollToItem(state.birds.size - 1)
         }
     }
 
     Layout(
-        identifiedBirds = identifiedBirds,
-        highlightedBirds = highlightedBirds,
+        identifiedBirds = state.birds,
+        highlightedBirds = state.currentlyHeardBirds,
         onStop = { saveRecord ->
-            service?.stop(saveRecord)
-            if (saveRecord) {
-                // Convert identified birds to DetectedBird objects with their confidence
-                val detectedBirdsList = identifiedBirds.map { birdName ->
-                    DetectedBird(
-                        name = birdName,
-                        confidence = birdConfidences[birdName] ?: 0f
-                    )
-                }
-                onNavigateToResults(detectedBirdsList, state.location, state.locationInfo, RecognizeService.audioFilePath)
+            val audio = service?.stop(saveRecord)
+            if (saveRecord && audio != null) {
+                viewModel.setEvent(ProgressContract.Event.SaveRecord(audio))
             } else {
                 navController.navigateUp()
             }
         },
         location = state.location.toStringLocation(),
         place = state.locationInfo.toStringLocation(),
-        timer = timer,
+        timerFlow = viewModel.timer,
         listState = lazyListState
     )
 }
@@ -191,11 +158,12 @@ fun ProgressScreen(
 @Composable
 private fun Layout(
     listState: LazyListState,
-    identifiedBirds: Set<String>,
-    highlightedBirds: Map<String, Boolean>,
+    identifiedBirds: Map<Int, IdentifiedBird>,
+    highlightedBirds: Set<Int>,
+    loading: Boolean = false,
     location: String? = null,
     place: String? = null,
-    timer: MutableState<String>,
+    timerFlow: Flow<Long>,
     onStop: (saveRecord: Boolean) -> Unit
 ) {
     Scaffold(
@@ -203,17 +171,23 @@ private fun Layout(
             TopAppBar(
                 title = {
                     Column {
-                        if (place.isNullOrEmpty().not()) {
+                        if (!place.isNullOrEmpty()) {
                             Text(
                                 text = place,
                                 style = MaterialTheme.typography.labelMedium
                             )
                         }
-                        if (location != null) {
-                            Text(
-                                text = location,
-                                style = MaterialTheme.typography.labelSmall
-                            )
+                        if (loading) {
+                            CircularProgressIndicator()
+                        } else {
+                            location?.let { loc ->
+                                if (loc.isNotEmpty()) {
+                                    Text(
+                                        text = loc,
+                                        style = MaterialTheme.typography.labelSmall
+                                    )
+                                }
+                            }
                         }
                     }
                 },
@@ -226,8 +200,8 @@ private fun Layout(
         bottomBar = {
             RecordingControls(
                 onCancel = { onStop(false) },
-                onStop = { onStop(true) },
-                timerValue = timer.value
+                onSave = { onStop(true) },
+                timerFlow = timerFlow
             )
         },
         containerColor = MaterialTheme.colorScheme.surfaceContainer,
@@ -240,11 +214,13 @@ private fun Layout(
             ),
             state = listState
         ) {
-            items(identifiedBirds.toList()) { bird ->
-                BirdRow(
-                    bird = bird,
-                    isHighlighted = highlightedBirds[bird] == true
-                )
+            identifiedBirds.forEach {
+                item {
+                    BirdRow(
+                        bird = it.value.name,
+                        isHighlighted = it.key in highlightedBirds
+                    )
+                }
             }
         }
     }
@@ -253,17 +229,19 @@ private fun Layout(
 @Composable
 fun RecordingControls(
     onCancel: () -> Unit,
-    onStop: () -> Unit,
-    timerValue: String
+    onSave: () -> Unit,
+    timerFlow: Flow<Long>
 ) {
+    val timerValue by timerFlow.collectAsStateWithLifecycle(0L)
+
     Box(
         modifier = Modifier
             .navigationBarsPadding()
             .fillMaxWidth()
             .padding(16.dp)
             .background(
-                MaterialTheme.colorScheme.surfaceContainer,
-                shape = RoundedCornerShape(12.dp)
+                MaterialTheme.colorScheme.surface,
+                shape = RoundedCornerShape(24.dp)
             )
             .padding(vertical = 8.dp)
     ) {
@@ -278,32 +256,27 @@ fun RecordingControls(
             )
         }
 
-        // Кнопка "Стоп"
-        IconButton(
-            onClick = onStop,
-            modifier = Modifier
-                .size(48.dp)
-                .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.error)
-                .align(Alignment.Center)
-        ) {
-            Icon(
-                painter = painterResource(R.drawable.ic_stop),
-                contentDescription = stringResource(R.string.stop_recording),
-                tint = MaterialTheme.colorScheme.onError,
-                modifier = Modifier.size(30.dp)
-            )
-        }
-
         // Таймер
         Text(
-            text = timerValue,
+            text = formatTime(timerValue),
             style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
             color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier
-                .align(Alignment.CenterEnd)
+                .align(Alignment.Center)
                 .padding(end = 12.dp)
         )
+
+        // Кнопка "Сохранить"
+        TextButton(
+            onClick = onSave,
+            modifier = Modifier.align(Alignment.CenterEnd)
+        ) {
+            Text(
+                text = stringResource(R.string.stop_recording),
+                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+                color = MaterialTheme.colorScheme.onSurface
+            )
+        }
     }
 }
 
@@ -330,4 +303,11 @@ fun BirdRow(bird: String, isHighlighted: Boolean) {
         }
         HorizontalDivider()
     }
+}
+
+private fun formatTime(elapsedMs: Long): String {
+    val totalSeconds = elapsedMs / 1000
+    val minutes = totalSeconds / 60
+    val seconds = totalSeconds % 60
+    return "%02d:%02d".format(minutes, seconds)
 }
