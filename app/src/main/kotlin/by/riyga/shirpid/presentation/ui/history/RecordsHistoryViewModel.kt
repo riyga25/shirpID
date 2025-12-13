@@ -34,22 +34,14 @@ class BirdHistoryViewModel(
     
     private fun loadStatistics() {
         viewModelScope.launch {
-            val totalCount = recordRepository.getRecordCount()
-            // For unique species, we need to count unique bird IDs across all records
             recordRepository.getAllRecords().collect { records ->
                 val uniqueSpeciesCount = records.flatMap { it.birds }.distinct().size
                 
                 _uiState.value = _uiState.value.copy(
-                    totalRecords = totalCount,
+                    totalRecords = records.size,
                     uniqueSpecies = uniqueSpeciesCount
                 )
             }
-        }
-    }
-    
-    fun deleteRecord(record: Record) {
-        viewModelScope.launch {
-            recordRepository.deleteRecord(record)
         }
     }
     
@@ -57,15 +49,6 @@ class BirdHistoryViewModel(
         viewModelScope.launch {
             recordRepository.deleteAllRecords()
         }
-    }
-    
-    fun refreshData() {
-        loadRecords()
-        loadStatistics()
-    }
-    
-    suspend fun getRecordByTimestamp(timestamp: Long): Record? {
-        return recordRepository.getRecordByTimestamp(timestamp)
     }
 }
 

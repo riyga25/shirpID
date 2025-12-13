@@ -120,7 +120,7 @@ class ProgressViewModel(
                     }.toList(),
                     latitude = currentState.location?.latitude,
                     longitude = currentState.location?.longitude,
-                    locationName = currentState.locationInfo?.let { "${it.city}, ${it.toStringLocation()}" },
+                    locationName = currentState.locationInfo?.let { "${it.city}, ${it.country}" },
                     // TODO add path
                     audioFilePath = null
                 )
