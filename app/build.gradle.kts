@@ -47,6 +47,7 @@ dependencies {
     implementation(libs.tensorflow.lite)
     implementation(libs.androidx.preference.ktx)
     implementation(libs.squareup.okhttp3)
+    implementation(libs.splashScreen)
 
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.compose.material3)

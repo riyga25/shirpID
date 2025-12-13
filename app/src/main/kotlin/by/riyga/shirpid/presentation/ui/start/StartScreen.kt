@@ -110,8 +110,8 @@ fun StartScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    Image(
-                        painter = painterResource(R.drawable.app_logo),
+                    Icon(
+                        painter = painterResource(R.drawable.ic_logo),
                         contentDescription = stringResource(R.string.settings),
                         modifier = Modifier.size(32.dp).clip(CircleShape)
                     )
