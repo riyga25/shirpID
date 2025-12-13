@@ -11,7 +11,7 @@
 
     <!-- StartScreen Main Action -->
     <string name="start_record_desc">Start recording</string>
-    <string name="sound_id_title">Sound ID</string>
+    <string name="sound_id_title">ShirpID</string>
     <string name="show_history">Show history</string>
     
     <!-- StartScreen Location Error -->
@@ -68,4 +68,5 @@
     <string name="language">Language</string>
     <string name="selected">Selected</string>
     <string name="license">License</string>
+    <string name="eavesdrop">We eavesdrop on the birds...</string>
 </resources>

@@ -20,6 +20,10 @@ android {
         versionCode = 1
         versionName = "1.0.0-alpha01"
         resourceConfigurations += setOf("ru", "en")
+
+        ndk {
+            abiFilters.addAll(arrayListOf("armeabi-v7a", "arm64-v8a"))
+        }
     }
 
     signingConfigs {

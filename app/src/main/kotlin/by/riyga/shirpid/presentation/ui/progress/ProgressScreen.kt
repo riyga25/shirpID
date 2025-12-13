@@ -65,6 +65,8 @@ fun ProgressScreen(
     val effect by viewModel.effect.collectAsStateWithLifecycle(null)
     val haptic = LocalHapticFeedback.current
     val lazyListState = rememberLazyListState()
+    val serviceTitle = stringResource(R.string.app_name)
+    val serviceDescription = stringResource(R.string.eavesdrop)
 
     var service: RecognizeService? by remember { mutableStateOf(null) }
     var isBound by remember { mutableStateOf(false) }
@@ -75,11 +77,12 @@ fun ProgressScreen(
                 service = localBinder.getService()
                 isBound = true
 
-                // Как только сервис привязан, запускаем его с координатами
                 if (state.location != null) {
                     service?.startForegroundService(
-                        state.location?.latitude?.toFloat() ?: 0F,
-                        state.location?.longitude?.toFloat() ?: 0F
+                        latitude = state.location?.latitude?.toFloat() ?: 0F,
+                        longitude = state.location?.longitude?.toFloat() ?: 0F,
+                        title = serviceTitle,
+                        description = serviceDescription
                     )
                 }
             }

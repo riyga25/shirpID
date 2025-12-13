@@ -56,7 +56,12 @@ class RecognizeService: Service() {
         return audioFilePath
     }
 
-    fun startForegroundService(latitude: Float, longitude: Float) {
+    fun startForegroundService(
+        latitude: Float,
+        longitude: Float,
+        title: String,
+        description: String
+    ) {
         scope.launch {
             soundClassifier = SoundClassifier(
                 context = this@RecognizeService,
@@ -65,7 +70,10 @@ class RecognizeService: Service() {
 
             createNotificationChannel()
 
-            val notification = createNotification("Подслушиваем пичуг...")
+            val notification = createNotification(
+                title = title,
+                description = description
+            )
             startForeground(1, notification)
 
             soundClassifier?.runMetaInterpreter(
@@ -93,7 +101,10 @@ class RecognizeService: Service() {
         manager.createNotificationChannel(channel)
     }
 
-    private fun createNotification(text: String): Notification {
+    private fun createNotification(
+        title: String,
+        description: String
+    ): Notification {
         val stopIntent = Intent(this, RecognizeService::class.java).apply {
             action = ACTION_STOP
         }
@@ -106,9 +117,9 @@ class RecognizeService: Service() {
         )
 
         return NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle("Sound Recognition")
-            .setContentText(text)
-            .setSmallIcon(R.drawable.ic_mic)
+            .setContentTitle(title)
+            .setContentText(description)
+            .setSmallIcon(R.drawable.ic_logo)
             .setOngoing(true)
             .build()
     }

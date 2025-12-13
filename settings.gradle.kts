@@ -18,5 +18,5 @@ dependencyResolutionManagement {
         }
     }
 }
-rootProject.name = "sound_clasifier"
+rootProject.name = "shirpID"
 include(":app")
