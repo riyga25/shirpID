@@ -5,6 +5,7 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.google.services)
     alias(libs.plugins.firebase.crashlytics)
+    alias(libs.plugins.firebase.perf)
     alias(libs.plugins.ksp)
 }
 
@@ -18,11 +19,23 @@ android {
         targetSdk = libs.versions.targetSdk.get().toInt()
         versionCode = 1
         versionName = "1.0.0-alpha01"
+        resourceConfigurations += setOf("ru", "en")
+    }
+
+    signingConfigs {
+        create("signingConfigRelease") {
+            storeFile = file("signing/key.jks")
+            storePassword = project.properties["RELEASE_STORE_PASSWORD"].toString()
+            keyAlias = project.properties["RELEASE_KEY_ALIAS"].toString()
+            keyPassword = project.properties["RELEASE_KEY_PASSWORD"].toString()
+        }
     }
 
     buildTypes {
         getByName("release") {
             isMinifyEnabled = true
+            isShrinkResources = true
+            signingConfig = signingConfigs.getByName("signingConfigRelease")
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
     }
@@ -79,6 +92,8 @@ dependencies {
     implementation(platform(libs.google.firebase.bom))
     implementation(libs.google.firebase.analytics)
     implementation(libs.google.firebase.crashlyticsNdk)
+    implementation(libs.google.firebase.crashlytics)
+    implementation(libs.google.firebase.perf)
 
     // Room database
     implementation(libs.androidx.room.runtime)
