@@ -39,7 +39,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.navigation.NavController
 import by.riyga.shirpid.R
-import by.riyga.shirpid.data.models.LocationData
+import data.models.LocationData
 import org.koin.compose.viewmodel.koinViewModel
 
 // Утилитарная функция для открытия настроек приложения

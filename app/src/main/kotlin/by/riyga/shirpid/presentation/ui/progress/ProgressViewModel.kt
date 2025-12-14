@@ -2,15 +2,15 @@ package by.riyga.shirpid.presentation.ui.progress
 
 import android.util.Log
 import androidx.lifecycle.viewModelScope
-import by.riyga.shirpid.data.LabelsRepository
-import by.riyga.shirpid.data.database.RecordRepository
-import by.riyga.shirpid.data.location.LocationRepository
-import by.riyga.shirpid.data.models.DetectedBird
-import by.riyga.shirpid.data.models.LocationData
-import by.riyga.shirpid.data.models.Record
-import by.riyga.shirpid.data.network.GeocoderDataSource
+import data.LabelsRepository
+import data.database.RecordRepository
+import data.location.LocationRepository
+import data.models.DetectedBird
+import data.models.LocationData
+import data.models.Record
+import data.network.GeocoderDataSource
 import by.riyga.shirpid.presentation.models.IdentifiedBird
-import by.riyga.shirpid.presentation.models.LocationInfo
+import data.models.LocationInfo
 import by.riyga.shirpid.utils.BaseViewModel
 import by.riyga.shirpid.utils.UiEffect
 import by.riyga.shirpid.utils.UiEvent

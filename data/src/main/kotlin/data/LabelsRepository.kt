@@ -1,9 +1,9 @@
-package by.riyga.shirpid.data
+package data
 
 import android.content.Context
 import android.util.Log
-import by.riyga.shirpid.data.models.Language
-import by.riyga.shirpid.data.preferences.AppPreferences
+import data.models.Language
+import data.preferences.AppPreferences
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 

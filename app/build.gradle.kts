@@ -6,7 +6,6 @@ plugins {
     alias(libs.plugins.google.services)
     alias(libs.plugins.firebase.crashlytics)
     alias(libs.plugins.firebase.perf)
-    alias(libs.plugins.ksp)
 }
 
 android {
@@ -58,12 +57,12 @@ android {
 }
 
 dependencies {
+    implementation(project(":data"))
+
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.google.material)
     implementation(libs.tensorflow.lite)
-    implementation(libs.androidx.preference.ktx)
-    implementation(libs.squareup.okhttp3)
     implementation(libs.splashScreen)
 
     implementation(platform(libs.androidx.compose.bom))
@@ -78,11 +77,6 @@ dependencies {
     implementation(libs.androidx.activity.compose)
 
     implementation(libs.androidx.navigation.compose)
-    implementation(libs.eygraber.uri.kmp)
-
-    implementation(libs.google.android.gms.playServicesLocation)
-    implementation(libs.kotlinx.coroutines.playServices)
-    implementation(libs.androidx.datastore.preferences)
 
     implementation(libs.insert.koin.koinCore)
     implementation(libs.insert.koin.koinAndroid)
@@ -90,17 +84,10 @@ dependencies {
     implementation(libs.insert.koin.koinComposeViewmodel)
 
     implementation(libs.kotlinx.serialization.json)
-    implementation(libs.jakewharton.retrofit.retrofit2KotlinxSerializationConverter)
-    implementation(libs.squareup.okhttp3.loggingInterceptor)
 
     implementation(platform(libs.google.firebase.bom))
     implementation(libs.google.firebase.analytics)
     implementation(libs.google.firebase.crashlyticsNdk)
     implementation(libs.google.firebase.crashlytics)
     implementation(libs.google.firebase.perf)
-
-    // Room database
-    implementation(libs.androidx.room.runtime)
-    implementation(libs.androidx.room.ktx)
-    ksp(libs.androidx.room.compiler)
 }

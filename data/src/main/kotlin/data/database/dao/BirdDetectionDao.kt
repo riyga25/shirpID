@@ -1,7 +1,7 @@
-package by.riyga.shirpid.data.database.dao
+package data.database.dao
 
 import androidx.room.*
-import by.riyga.shirpid.data.models.Record
+import data.models.Record
 import kotlinx.coroutines.flow.Flow
 
 @Dao

@@ -1,7 +1,7 @@
-package by.riyga.shirpid.data.database
+package data.database
 
-import by.riyga.shirpid.data.database.dao.RecordDao
-import by.riyga.shirpid.data.models.Record
+import data.database.dao.RecordDao
+import data.models.Record
 import kotlinx.coroutines.flow.Flow
 
 interface RecordRepository {

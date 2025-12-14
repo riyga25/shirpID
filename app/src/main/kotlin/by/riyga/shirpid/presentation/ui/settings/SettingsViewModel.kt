@@ -2,8 +2,8 @@ package by.riyga.shirpid.presentation.ui.settings
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import by.riyga.shirpid.data.models.Language
-import by.riyga.shirpid.data.preferences.AppPreferences
+import data.models.Language
+import data.preferences.AppPreferences
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn

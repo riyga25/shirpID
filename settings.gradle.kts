@@ -20,3 +20,4 @@ dependencyResolutionManagement {
 }
 rootProject.name = "shirpID"
 include(":app")
+include(":data")

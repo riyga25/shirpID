@@ -1,7 +1,7 @@
 package by.riyga.shirpid
 
 import android.app.Application
-import by.riyga.shirpid.di.dataModule
+import data.di.dataModule
 import by.riyga.shirpid.di.presentationModule
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.context.startKoin

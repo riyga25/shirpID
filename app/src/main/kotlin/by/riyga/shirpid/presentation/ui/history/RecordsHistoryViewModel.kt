@@ -2,8 +2,8 @@ package by.riyga.shirpid.presentation.ui.history
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import by.riyga.shirpid.data.database.RecordRepository
-import by.riyga.shirpid.data.models.Record
+import data.database.RecordRepository
+import data.models.Record
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow

@@ -1,13 +1,13 @@
-package by.riyga.shirpid.data.database
+package data.database
 
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import android.content.Context
-import by.riyga.shirpid.data.database.converters.Converters
-import by.riyga.shirpid.data.database.dao.RecordDao
-import by.riyga.shirpid.data.models.Record
+import data.database.converters.Converters
+import data.database.dao.RecordDao
+import data.models.Record
 
 @Database(
     entities = [Record::class],

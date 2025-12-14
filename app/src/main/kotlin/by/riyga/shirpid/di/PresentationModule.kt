@@ -1,7 +1,7 @@
 package by.riyga.shirpid.di
 
-import by.riyga.shirpid.data.database.RecordRepository
-import by.riyga.shirpid.data.preferences.AppPreferences
+import data.database.RecordRepository
+import data.preferences.AppPreferences
 import by.riyga.shirpid.presentation.ui.detection_result.DetectionResultViewModel
 import by.riyga.shirpid.presentation.ui.history.BirdHistoryViewModel
 import by.riyga.shirpid.presentation.ui.progress.ProgressViewModel

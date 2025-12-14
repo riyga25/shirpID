@@ -1,6 +1,6 @@
-package by.riyga.shirpid.data.network
+package data.network
 
-import by.riyga.shirpid.data.models.LocationIQResponse
+import data.models.LocationIQResponse
 import retrofit2.http.GET
 import retrofit2.http.Query
 

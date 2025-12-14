@@ -1,4 +1,4 @@
-package by.riyga.shirpid.data.location
+package data.location
 
 import android.Manifest
 import android.content.Context
@@ -7,7 +7,7 @@ import androidx.core.content.ContextCompat.checkSelfPermission
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority.PRIORITY_HIGH_ACCURACY
-import by.riyga.shirpid.data.models.LocationData
+import data.models.LocationData
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext

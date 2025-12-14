@@ -1,4 +1,4 @@
-package by.riyga.shirpid.data.models
+package data.models
 
 enum class Language(val code: String, val displayName: String, val assets: String) {
     ENGLISH("en", "English", "labels_en.txt"),

@@ -7,9 +7,9 @@ import android.os.Build
 import androidx.core.app.ActivityCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import by.riyga.shirpid.data.location.LocationRepository
-import by.riyga.shirpid.data.location.LocationUnavailableException
-import by.riyga.shirpid.data.models.LocationData
+import data.location.LocationRepository
+import data.location.LocationUnavailableException
+import data.models.LocationData
 import by.riyga.shirpid.utils.isPermissionGranted
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow

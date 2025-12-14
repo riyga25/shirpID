@@ -19,7 +19,6 @@ coreKtx = "1.17.0"
 appcompat = "1.7.1"
 material = "1.13.0"
 tensorflowLite = "2.17.0"
-preferenceKtx = "1.2.1"
 okhttp = "5.3.2"
 
 # Compose
@@ -45,6 +44,9 @@ firebaseBom = "34.7.0"
 
 # Room
 room = "2.8.4"
+junit = "4.13.2"
+junitVersion = "1.3.0"
+espressoCore = "3.7.0"
 
 [libraries]
 # Core libraries
@@ -53,7 +55,6 @@ androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version
 splashScreen = { group = "androidx.core", name = "core-splashscreen", version.ref = "splashScreen" }
 google-material = { group = "com.google.android.material", name = "material", version.ref = "material" }
 tensorflow-lite = { group = "org.tensorflow", name = "tensorflow-lite", version.ref = "tensorflowLite" }
-androidx-preference-ktx = { group = "androidx.preference", name = "preference-ktx", version.ref = "preferenceKtx" }
 squareup-okhttp3 = { group = "com.squareup.okhttp3", name = "okhttp", version.ref = "okhttp" }
 
 # Compose
@@ -95,6 +96,9 @@ google-firebase-crashlytics = { group = "com.google.firebase", name = "firebase-
 androidx-room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "room" }
 androidx-room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
 androidx-room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
+junit = { group = "junit", name = "junit", version.ref = "junit" }
+androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
+androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "androidGradlePlugin" }

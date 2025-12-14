@@ -1,4 +1,4 @@
-package by.riyga.shirpid.data.models
+package data.models
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable

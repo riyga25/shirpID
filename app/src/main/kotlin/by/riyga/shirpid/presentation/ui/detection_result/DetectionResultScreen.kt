@@ -138,7 +138,7 @@ fun BirdDetectionResultScreen(
                 ) {
                     if (record.locationName != null) {
                         Text(
-                            text = record.locationName,
+                            text = record.locationName ?: "",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold
                         )

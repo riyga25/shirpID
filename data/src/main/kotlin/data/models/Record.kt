@@ -1,4 +1,4 @@
-package by.riyga.shirpid.data.models
+package data.models
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey

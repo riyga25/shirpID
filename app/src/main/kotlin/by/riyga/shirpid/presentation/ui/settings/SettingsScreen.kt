@@ -32,7 +32,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import by.riyga.shirpid.R
-import by.riyga.shirpid.data.models.Language
+import data.models.Language
 import by.riyga.shirpid.presentation.ui.Route
 import org.koin.compose.viewmodel.koinViewModel
 

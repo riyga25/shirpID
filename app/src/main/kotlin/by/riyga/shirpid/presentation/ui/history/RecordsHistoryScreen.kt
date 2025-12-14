@@ -22,7 +22,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import by.riyga.shirpid.data.models.Record
+import data.models.Record
 import by.riyga.shirpid.presentation.ui.Route
 import by.riyga.shirpid.utils.LocalNavController
 import org.koin.compose.viewmodel.koinViewModel

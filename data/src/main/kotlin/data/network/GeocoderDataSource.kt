@@ -1,6 +1,6 @@
-package by.riyga.shirpid.data.network
+package data.network
 
-import by.riyga.shirpid.presentation.models.LocationInfo
+import data.models.LocationInfo
 
 interface GeocoderDataSource {
     suspend fun getLocationInfo(latitude: Double, longitude: Double): LocationInfo

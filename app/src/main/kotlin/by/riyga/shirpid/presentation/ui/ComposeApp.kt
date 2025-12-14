@@ -7,7 +7,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
-import by.riyga.shirpid.data.models.LocationData
+import data.models.LocationData
 import by.riyga.shirpid.presentation.ui.detection_result.BirdDetectionResultScreen
 import by.riyga.shirpid.presentation.ui.history.BirdHistoryScreen
 import by.riyga.shirpid.presentation.ui.progress.ProgressScreen
@@ -16,8 +16,6 @@ import by.riyga.shirpid.presentation.ui.settings.SettingsScreen
 import by.riyga.shirpid.presentation.ui.start.StartScreen
 import by.riyga.shirpid.theme.AppTheme
 import by.riyga.shirpid.utils.LocalNavController
-import by.riyga.shirpid.utils.composableWithArgs
-import by.riyga.shirpid.utils.navType
 import kotlinx.serialization.Serializable
 
 @Composable

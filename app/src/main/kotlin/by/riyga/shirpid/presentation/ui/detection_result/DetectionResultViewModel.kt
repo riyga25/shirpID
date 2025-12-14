@@ -1,9 +1,9 @@
 package by.riyga.shirpid.presentation.ui.detection_result
 
 import androidx.lifecycle.viewModelScope
-import by.riyga.shirpid.data.LabelsRepository
-import by.riyga.shirpid.data.database.RecordRepository
-import by.riyga.shirpid.data.models.Record
+import data.LabelsRepository
+import data.database.RecordRepository
+import data.models.Record
 import by.riyga.shirpid.presentation.models.IdentifiedBird
 import by.riyga.shirpid.utils.BaseViewModel
 import by.riyga.shirpid.utils.UiEffect

@@ -1,4 +1,4 @@
-package by.riyga.shirpid.presentation.models
+package data.models
 
 import kotlinx.serialization.Serializable
 
