@@ -10,7 +10,6 @@ import androidx.activity.compose.LocalActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.*
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -39,6 +38,8 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.navigation.NavController
 import by.riyga.shirpid.R
+import by.riyga.shirpid.presentation.ui.Route
+import by.riyga.shirpid.utils.LocalNavController
 import data.models.LocationData
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -55,15 +56,13 @@ fun openAppSettings(context: Context) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun StartScreen(
-    navController: NavController,
-    onStart: (location: LocationData) -> Unit = {},
-    onShowHistory: () -> Unit = {},
     viewModel: StartScreenViewModel = koinViewModel()
 ) {
+    val navController = LocalNavController.current
     val context = LocalContext.current
     val activity = LocalActivity.current
     val lifecycleOwner = LocalLifecycleOwner.current
-    val uiState by viewModel.uiState.collectAsState()
+    val state by viewModel.uiState.collectAsState()
 
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
@@ -73,13 +72,12 @@ fun StartScreen(
         }
     }
 
-    LaunchedEffect(uiState.isFineLocationGranted) {
-        if (uiState.isFineLocationGranted) {
+    LaunchedEffect(state.isFineLocationGranted) {
+        if (state.isFineLocationGranted) {
             viewModel.fetchLocationAndProceed()
         }
     }
 
-    // Обработка событий от ViewModel
     LaunchedEffect(viewModel.eventFlow) {
         viewModel.eventFlow.collect { event ->
             when (event) {
@@ -113,7 +111,10 @@ fun StartScreen(
                     Icon(
                         painter = painterResource(R.drawable.ic_logo),
                         contentDescription = stringResource(R.string.settings),
-                        modifier = Modifier.size(32.dp).clip(CircleShape)
+                        modifier = Modifier
+                            .size(32.dp)
+                            .clip(CircleShape),
+                        tint = MaterialTheme.colorScheme.onSurface
                     )
                 },
                 actions = {
@@ -143,18 +144,18 @@ fun StartScreen(
             Column(
                 modifier = Modifier.padding(horizontal = 16.dp)
             ) {
-                if (uiState.isLoadingLocation) {
+                if (state.isLoadingLocation) {
                     CircularProgressIndicator()
-                } else if (uiState.locationError != null) {
+                } else if (state.locationError != null) {
                     Text(
-                        stringResource(R.string.location_error, uiState.locationError ?: "-"),
+                        stringResource(R.string.location_error, state.locationError ?: "-"),
                         color = MaterialTheme.colorScheme.error
                     )
                     Button(onClick = { viewModel.fetchLocationAndProceed() }) {
                         Text(stringResource(R.string.try_again))
                     }
                 } else {
-                    uiState.currentLocation?.let {
+                    state.currentLocation?.let {
                         Text("${it.latitude}, ${it.longitude}", fontSize = 12.sp)
                     }
                 }
@@ -165,9 +166,9 @@ fun StartScreen(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier.align(Alignment.Center)
             ) {
-                if (!uiState.allPermissionsGranted) {
+                if (!state.allPermissionsGranted) {
                     PermissionRequestSection(
-                        uiState = uiState,
+                        uiState = state,
                         onAudioPermissionClick = {
                             viewModel.onPermissionRequested(Manifest.permission.RECORD_AUDIO)
                         },
@@ -180,17 +181,23 @@ fun StartScreen(
                             }
                         }
                     )
-                } else if (!uiState.isLoadingLocation && uiState.locationError == null) {
+                } else if (!state.isLoadingLocation && state.locationError == null) {
                     MainActionButton(
-                        onStart = { uiState.currentLocation?.let { onStart.invoke(it) } },
-                        onShowHistory = onShowHistory
+                        onStart = {
+                            state.currentLocation?.let {
+                                navController.navigate(Route.Progress)
+                            }
+                        },
+                        onShowHistory = {
+                            navController.navigate(Route.BirdHistory)
+                        }
                     )
                 }
             }
         }
     }
 
-    if (uiState.showSettingsDialog) {
+    if (state.showSettingsDialog) {
         SettingsRedirectDialog(
             onDismiss = { viewModel.dismissSettingsDialog() },
             onConfirm = { viewModel.requestOpenAppSettings() }

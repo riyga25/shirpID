@@ -7,7 +7,6 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
-import data.models.LocationData
 import by.riyga.shirpid.presentation.ui.detection_result.BirdDetectionResultScreen
 import by.riyga.shirpid.presentation.ui.history.BirdHistoryScreen
 import by.riyga.shirpid.presentation.ui.progress.ProgressScreen
@@ -58,19 +57,12 @@ sealed interface Route {
 fun AppNavHost(
     navController: NavHostController
 ) {
-    NavHost(navController = navController, startDestination = Route.Start) {
+    NavHost(
+        navController = navController,
+        startDestination = Route.Start
+    ) {
         composable<Route.Start> {
-            StartScreen(
-                navController = navController,
-                onStart = { location ->
-                    navController.navigate(Route.Progress)
-                },
-                onShowHistory = {
-                    navController.navigate(
-                        Route.BirdHistory
-                    )
-                }
-            )
+            StartScreen()
         }
 
         composable<Route.Progress> { backStackEntry ->
