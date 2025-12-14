@@ -1,0 +1,72 @@
+<resources>
+    <string name="app_name" translatable="false">ЧирикID</string>
+    
+    <!-- StartScreen Permissions -->
+    <string name="permission_audio_request">Разрешить доступ у микрофону</string>
+    <string name="permission_audio_description">Необходимо для записи голосов птиц</string>
+    <string name="permission_location_request">Разрешить доступ к местоположению</string>
+    <string name="permission_location_description">Местоположение используется для того чтобы повысить качество определения</string>
+    <string name="permission_notification_request">Разрешить уведомления</string>
+    <string name="permission_notification_description">Используется для запуска сервиса, чтобы приложение работало корректно даже в свернутом виде</string>
+    
+    <!-- StartScreen Main Action -->
+    <string name="start_record_desc">Начать запись</string>
+    <string name="sound_id_title">ShirpID</string>
+    <string name="show_history">Показать историю</string>
+    
+    <!-- StartScreen Location Error -->
+    <string name="location_error">Ошибка: %s</string>
+    <string name="try_again">Повторить</string>
+    
+    <!-- Settings Redirect Dialog -->
+    <string name="permission_settings_dialog_title">Требуется разрешение</string>
+    <string name="permission_settings_dialog_message">Для корректной работы приложения необходимо предоставить разрешения. Вы можете сделать это в настройках приложения.</string>
+    <string name="cancel">Отмена</string>
+    <string name="go_to_settings">В настройки</string>
+    
+    <!-- ProgressScreen -->
+    <string name="stop_recording">Сохранить</string>
+    <string name="cancel_recording">Отменить</string>
+    
+    <!-- DetectionResultScreen -->
+    <string name="detection_results">Результаты обнаружения</string>
+    <string name="back_to_start">Назад к началу</string>
+    <string name="recording_location">📍 Место записи</string>
+    <string name="no_birds_detected">Птицы не обнаружены</string>
+    <string name="detected_birds">Обнаруженные птицы (%d)</string>
+    <string name="no_birds_detected_message">Попробуйте записывать в другом месте или в другое время, когда птицы более активны.</string>
+    <string name="save_birds">Сохранить птиц</string>
+    <string name="saving">Сохранение...</string>
+    <string name="saved">Сохранено!</string>
+    <string name="new_recording">Новая запись</string>
+    
+    <!-- RecordsHistoryScreen -->
+    <string name="saved_records">Сохраненные записи</string>
+    <string name="back">Назад</string>
+    <string name="delete_all">Удалить все</string>
+    <string name="delete_all_records">Удалить все записи</string>
+    <string name="delete_all_records_confirmation">Вы уверены, что хотите удалить все сохраненные записи? Это действие нельзя отменить.</string>
+    <string name="total_records">Всего записей</string>
+    <string name="unique_species">Уникальных видов</string>
+    <string name="no_records_saved_yet">Пока нет сохраненных записей</string>
+    <string name="start_recording_to_save">Начните запись, чтобы сохранить звуки птиц!</string>
+    <string name="birds">птицы</string>
+    <string name="unknown_location">Неизвестное место</string>
+    
+    <!-- RecordDetailScreen -->
+    <string name="record_details">Детали записи</string>
+    <string name="coordinates" formatted="false">Координаты: %s, %s</string>
+    <string name="recorded">Записано: %s</string>
+    <string name="no_birds_in_recording">В этой записи птицы не обнаружены</string>
+    
+    <!-- Error Messages -->
+    <string name="failed_to_save_record">Не удалось сохранить запись: %s</string>
+    <string name="error_loading_labels">Ошибка загрузки меток: %s</string>
+    
+    <!-- Settings -->
+    <string name="settings">Настройки</string>
+    <string name="language">Язык</string>
+    <string name="selected">Выбрано</string>
+    <string name="license">Лицензия</string>
+    <string name="eavesdrop">Подслушиваем пичуг...</string>
+</resources>

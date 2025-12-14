@@ -1,7 +1,6 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
-    alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.google.services)
     alias(libs.plugins.firebase.crashlytics)
@@ -16,8 +15,8 @@ android {
         applicationId = "by.riyga.shirpid"
         minSdk = libs.versions.minSdk.get().toInt()
         targetSdk = libs.versions.targetSdk.get().toInt()
-        versionCode = 1
-        versionName = "1.0.0-alpha01"
+        versionCode = 2
+        versionName = "1.0.0-alpha02"
         resourceConfigurations += setOf("ru", "en")
 
         ndk {
@@ -57,33 +56,17 @@ android {
 }
 
 dependencies {
-    implementation(project(":data"))
+    implementation(project(":presentation"))
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.google.material)
-    implementation(libs.tensorflow.lite)
     implementation(libs.splashScreen)
 
-    implementation(platform(libs.androidx.compose.bom))
-    implementation(libs.androidx.compose.material3)
-    implementation(libs.androidx.compose.material.iconsExtended)
-    implementation(libs.androidx.compose.runtime)
-    implementation(libs.androidx.compose.foundation)
-    implementation(libs.androidx.compose.ui)
-    implementation(libs.androidx.compose.animation)
-    implementation(libs.androidx.compose.ui.toolingPreview)
-    implementation(libs.androidx.compose.ui.tooling)
     implementation(libs.androidx.activity.compose)
-
-    implementation(libs.androidx.navigation.compose)
 
     implementation(libs.insert.koin.koinCore)
     implementation(libs.insert.koin.koinAndroid)
-    implementation(libs.insert.koin.koinCompose)
-    implementation(libs.insert.koin.koinComposeViewmodel)
-
-    implementation(libs.kotlinx.serialization.json)
 
     implementation(platform(libs.google.firebase.bom))
     implementation(libs.google.firebase.analytics)
