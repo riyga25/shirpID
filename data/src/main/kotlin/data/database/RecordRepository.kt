@@ -13,6 +13,7 @@ interface RecordRepository {
     suspend fun updateRecord(record: Record)
     suspend fun deleteRecord(record: Record)
     suspend fun deleteRecordByTimestamp(timestamp: Long)
+    suspend fun deleteRecordsByTimestamp(timestamps: List<Long>)
     suspend fun deleteAllRecords()
 }
 
@@ -43,7 +44,11 @@ class RecordRepositoryImpl(
     
     override suspend fun deleteRecordByTimestamp(timestamp: Long) =
         recordDao.deleteRecordByTimestamp(timestamp)
-    
+
+    override suspend fun deleteRecordsByTimestamp(timestamps: List<Long>) {
+        recordDao.deleteRecordsByTimestamp(timestamps)
+    }
+
     override suspend fun deleteAllRecords() =
         recordDao.deleteAllRecords()
 }

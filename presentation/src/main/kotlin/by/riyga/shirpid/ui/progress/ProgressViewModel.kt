@@ -105,7 +105,7 @@ class ProgressViewModel(
     }
 
     private fun saveRecord(
-        audioPath: String?
+        audioPath: String
     ) {
         viewModelScope.launch {
             setState {
@@ -120,8 +120,7 @@ class ProgressViewModel(
                     latitude = currentState.location?.latitude,
                     longitude = currentState.location?.longitude,
                     locationName = currentState.locationInfo?.let { "${it.city}, ${it.country}" },
-                    // TODO add path
-                    audioFilePath = null
+                    audioFilePath = audioPath
                 )
 
                 val id = recordRepository.insertRecord(record)

@@ -12,7 +12,7 @@
     <!-- StartScreen Main Action -->
     <string name="start_record_desc">Start recording</string>
     <string name="sound_id_title">ShirpID</string>
-    <string name="show_history">Show history</string>
+    <string name="show_history">Archive of records</string>
     
     <!-- StartScreen Location Error -->
     <string name="location_error">Error: %s</string>
@@ -41,7 +41,7 @@
     <string name="new_recording">New Recording</string>
     
     <!-- RecordsHistoryScreen -->
-    <string name="saved_records">Saved Records</string>
+    <string name="archive">Archive</string>
     <string name="back">Back</string>
     <string name="delete_all">Delete All</string>
     <string name="delete_all_records">Delete All Records</string>

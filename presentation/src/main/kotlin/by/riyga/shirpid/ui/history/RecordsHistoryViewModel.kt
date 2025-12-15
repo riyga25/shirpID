@@ -50,6 +50,12 @@ class BirdHistoryViewModel(
             recordRepository.deleteAllRecords()
         }
     }
+
+    fun removeRecord(ids: List<Long>) {
+        viewModelScope.launch {
+            recordRepository.deleteRecordsByTimestamp(ids)
+        }
+    }
 }
 
 data class BirdHistoryState(

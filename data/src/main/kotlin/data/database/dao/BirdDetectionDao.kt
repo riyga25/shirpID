@@ -30,6 +30,9 @@ interface RecordDao {
     
     @Query("DELETE FROM records WHERE timestamp = :timestamp")
     suspend fun deleteRecordByTimestamp(timestamp: Long)
+
+    @Query("DELETE FROM records WHERE timestamp IN (:timestamps)")
+    suspend fun deleteRecordsByTimestamp(timestamps: List<Long>)
     
     @Query("DELETE FROM records")
     suspend fun deleteAllRecords()

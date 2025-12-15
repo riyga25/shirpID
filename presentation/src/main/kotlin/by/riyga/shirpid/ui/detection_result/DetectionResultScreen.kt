@@ -2,54 +2,67 @@ package by.riyga.shirpid.ui.detection_result
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Save
+import androidx.compose.material.icons.filled.PauseCircle
+import androidx.compose.material.icons.filled.PlayCircle
 import androidx.compose.material3.*
+import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.runtime.*
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.core.net.toUri
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import by.riyga.shirpid.ui.Route
 import org.koin.compose.viewmodel.koinViewModel
 import by.riyga.shirpid.models.IdentifiedBird
+import by.riyga.shirpid.player.PlayerState
 import by.riyga.shirpid.utils.LocalNavController
 import org.koin.core.parameter.parametersOf
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import by.riyga.shirpid.presentation.R
+import by.riyga.shirpid.utils.deleteAudio
+import by.riyga.shirpid.utils.isAudioExists
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BirdDetectionResultScreen(
     recordId: Long,
-    fromHistory: Boolean = false
+    fromArchive: Boolean = false
 ) {
+    val context = LocalContext.current
+    val navController = LocalNavController.current
     val viewModel: DetectionResultViewModel = koinViewModel {
         parametersOf(recordId)
     }
-    val navController = LocalNavController.current
     val state by viewModel.uiState.collectAsState()
     val effect by viewModel.effect.collectAsStateWithLifecycle(null)
+    val mediaState by viewModel.mediaState.collectAsState(initial = PlayerState())
 
     val record = state.record
 
     fun onBack() {
-        if (fromHistory) {
+        if (fromArchive) {
             navController.popBackStack()
         } else {
             navController.popBackStack(Route.Start, false)
@@ -59,6 +72,7 @@ fun BirdDetectionResultScreen(
     LaunchedEffect(effect) {
         when (val castEffect = effect) {
             is DetectionResultContract.Effect.RecordRemoved -> {
+                context.deleteAudio(castEffect.uri.toUri())
                 onBack()
             }
 
@@ -66,18 +80,26 @@ fun BirdDetectionResultScreen(
         }
     }
 
-    BackHandler {
-        onBack()
+    // audio exist double check after history list
+    LaunchedEffect(state.record) {
+        state.record?.let {
+            val isExist = context.isAudioExists(it.audioFilePath)
+            if (!isExist) {
+                viewModel.setEvent(DetectionResultContract.Event.RemoveRecord)
+            }
+        }
     }
+
+    BackHandler { onBack() }
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = {},
                 navigationIcon = {
-                    IconButton(onClick = {
-                        navController.popBackStack(Route.Start, inclusive = false)
-                    }) {
+                    IconButton(
+                        onClick = { onBack() }
+                    ) {
                         Icon(
                             Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = stringResource(by.riyga.shirpid.presentation.R.string.back_to_start)
@@ -101,19 +123,33 @@ fun BirdDetectionResultScreen(
             )
         },
         bottomBar = {
-            if (!fromHistory) {
-                Button(
-                    onClick = {
-                        navController.popBackStack()
-                        navController.navigate(Route.Progress)
-                    },
+            if (!fromArchive) {
+                Row(
                     modifier = Modifier
                         .padding(horizontal = 16.dp)
                         .padding(bottom = 8.dp)
                         .fillMaxWidth()
                         .navigationBarsPadding()
                 ) {
-                    Text(stringResource(R.string.new_recording))
+                    OutlinedButton(
+                        onClick = {
+                            navController.popBackStack()
+                            navController.navigate(Route.Archive)
+                        },
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text(stringResource(R.string.archive))
+                    }
+                    Spacer(Modifier.size(8.dp))
+                    Button(
+                        onClick = {
+                            navController.popBackStack()
+                            navController.navigate(Route.Progress)
+                        },
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text(stringResource(R.string.new_recording))
+                    }
                 }
             }
         },
@@ -171,6 +207,68 @@ fun BirdDetectionResultScreen(
                 }
             }
 
+            if (record != null) {
+                Box(
+                    Modifier
+                        .padding(top = 16.dp)
+                        .background(
+                            colorScheme.tertiary.copy(alpha = 0.3f), RoundedCornerShape(8.dp)
+                        )
+                        .clip(RoundedCornerShape(8.dp))
+                ) {
+                    if (mediaState.progress > 0) {
+                        val progressValue = if (mediaState.duration != 0L) {
+                            mediaState.progress.toFloat() / mediaState.duration
+                        } else 0f
+
+                        LinearProgressIndicator(
+                            progress = { progressValue },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .align(Alignment.BottomStart),
+                            gapSize = 0.dp,
+                            drawStopIndicator = {}
+                        )
+                    }
+                    Text(
+                        text = "${formatTime(mediaState.progress)}/${formatTime(mediaState.duration)}",
+                        modifier = Modifier
+                            .padding(8.dp)
+                            .align(Alignment.TopEnd),
+                        fontSize = 12.sp
+                    )
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            if (mediaState.isPlaying) {
+                                Icons.Default.PauseCircle
+                            } else {
+                                Icons.Default.PlayCircle
+                            },
+                            contentDescription = null,
+                            modifier = Modifier
+                                .size(40.dp)
+                                .clip(CircleShape)
+                                .clickable(
+                                    role = Role.Button,
+                                    onClick = {
+                                        if (mediaState.isPlaying) {
+                                            viewModel.pauseAudio()
+                                        } else {
+                                            viewModel.playAudio()
+                                        }
+                                    }
+                                ),
+                            tint = colorScheme.tertiary
+                        )
+                    }
+                }
+            }
+
             LazyColumn(
                 contentPadding = PaddingValues(bottom = paddingValues.calculateBottomPadding()),
                 modifier = Modifier.padding(top = 16.dp),
@@ -194,43 +292,6 @@ fun BirdDetectionResultScreen(
                     DetectedBirdCard(bird)
                 }
             }
-        }
-    }
-}
-
-@Composable
-fun LocationInfoCard(
-    latitude: Double?,
-    longitude: Double?,
-    locationName: String?,
-    modifier: Modifier = Modifier
-) {
-    Card(
-        modifier = modifier,
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp)
-        ) {
-            Text(
-                text = stringResource(R.string.recording_location),
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-
-            if (locationName != null) {
-                Text(
-                    text = locationName,
-                    style = MaterialTheme.typography.bodyMedium
-                )
-            }
-
-            Text(
-                text = "${String.format("%.4f", latitude)}, ${String.format("%.4f", longitude)}",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
         }
     }
 }
@@ -291,117 +352,14 @@ fun DetectedBirdCard(
     }
 }
 
-@Composable
-fun EmptyDetectionCard(
-    modifier: Modifier = Modifier
-) {
-    Card(
-        modifier = modifier,
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            Text(
-                text = "🔇",
-                style = MaterialTheme.typography.displayMedium
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-            Text(
-                text = stringResource(R.string.no_birds_detected),
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold,
-                textAlign = TextAlign.Center
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = stringResource(R.string.no_birds_detected_message),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center
-            )
-        }
-    }
-}
+private fun formatTime(millis: Long?): String {
+    if (millis == null) return ""
 
-@Composable
-fun ActionButtons(
-    hasDetections: Boolean,
-    isSaving: Boolean,
-    isSaved: Boolean,
-    saveError: String?,
-    onSave: () -> Unit,
-    onNewRecording: () -> Unit
-) {
-    Column {
-        if (saveError != null) {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)
-            ) {
-                Text(
-                    text = saveError,
-                    modifier = Modifier.padding(16.dp),
-                    color = MaterialTheme.colorScheme.onErrorContainer,
-                    style = MaterialTheme.typography.bodySmall
-                )
-            }
-            Spacer(modifier = Modifier.height(8.dp))
-        }
+    val timeMin = millis / 60000
+    val timeSec = (millis / 1000) % 60
 
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            // Save button (only show if there are detections and not saved yet)
-            if (hasDetections && !isSaved) {
-                Button(
-                    onClick = onSave,
-                    enabled = !isSaving,
-                    modifier = Modifier.weight(1f)
-                ) {
-                    if (isSaving) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(16.dp),
-                            strokeWidth = 2.dp
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(stringResource(R.string.saving))
-                    } else {
-                        Icon(Icons.Default.Save, contentDescription = null)
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(stringResource(R.string.save_birds))
-                    }
-                }
-            }
+    val minString = if (timeMin < 10) "0$timeMin" else "$timeMin"
+    val secString = if (timeSec < 10) "0$timeSec" else "$timeSec"
 
-            // Success indicator (show when saved)
-            if (isSaved) {
-                Button(
-                    onClick = { },
-                    enabled = false,
-                    modifier = Modifier.weight(1f),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary
-                    )
-                ) {
-                    Icon(Icons.Default.Check, contentDescription = null)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(stringResource(R.string.saved))
-                }
-            }
-
-            // New recording button
-            OutlinedButton(
-                onClick = onNewRecording,
-                modifier = Modifier.weight(1f)
-            ) {
-                Text(stringResource(R.string.new_recording))
-            }
-        }
-    }
+    return "$minString:$secString"
 }

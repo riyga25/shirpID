@@ -33,15 +33,16 @@ import androidx.navigation.NavController
 import by.riyga.shirpid.presentation.R
 import data.models.Language
 import by.riyga.shirpid.ui.Route
+import by.riyga.shirpid.utils.LocalNavController
 import org.koin.compose.viewmodel.koinViewModel
 import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
-    navController: NavController,
     viewModel: SettingsViewModel = koinViewModel()
 ) {
+    val navController = LocalNavController.current
     val context = LocalContext.current
     val currentLanguage by viewModel.currentLanguage.collectAsStateWithLifecycle()
 

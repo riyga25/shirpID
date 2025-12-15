@@ -38,12 +38,12 @@ sealed interface Route {
     data object Progress : Route
 
     @Serializable
-    data object BirdHistory : Route
+    data object Archive : Route
 
     @Serializable
     data class DetectionResult(
         val recordId: Long,
-        val fromHistory: Boolean
+        val fromArchive: Boolean
     ) : Route
 
     @Serializable
@@ -69,20 +69,20 @@ fun AppNavHost(
             ProgressScreen()
         }
 
-        composable<Route.BirdHistory> {
-            BirdHistoryScreen(navController = navController)
+        composable<Route.Archive> {
+            BirdHistoryScreen()
         }
 
         composable<Route.DetectionResult> { backStackEntry ->
             val route = backStackEntry.toRoute<Route.DetectionResult>()
             BirdDetectionResultScreen(
                 recordId = route.recordId,
-                fromHistory = route.fromHistory
+                fromArchive = route.fromArchive
             )
         }
 
         composable<Route.Settings> {
-            SettingsScreen(navController = navController)
+            SettingsScreen()
         }
 
         composable<Route.License> {

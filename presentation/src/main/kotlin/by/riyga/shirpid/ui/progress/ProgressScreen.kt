@@ -144,8 +144,12 @@ fun ProgressScreen(
         highlightedBirds = state.currentlyHeardBirds,
         onStop = { saveRecord ->
             val audio = service?.stop(saveRecord)
-            if (saveRecord && audio != null) {
-                viewModel.setEvent(ProgressContract.Event.SaveRecord(audio))
+            if (saveRecord) {
+                if (audio != null) {
+                    viewModel.setEvent(ProgressContract.Event.SaveRecord(audio))
+                } else {
+                    // TODO show error ?!
+                }
             } else {
                 navController.navigateUp()
             }

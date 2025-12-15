@@ -13,5 +13,5 @@ data class Record(
     val latitude: Double? = null,
     val longitude: Double? = null,
     val locationName: String? = null,
-    val audioFilePath: String? = null
+    val audioFilePath: String
 )

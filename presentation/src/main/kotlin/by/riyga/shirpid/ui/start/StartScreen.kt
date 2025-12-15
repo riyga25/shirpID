@@ -187,7 +187,7 @@ fun StartScreen(
                             }
                         },
                         onShowHistory = {
-                            navController.navigate(Route.BirdHistory)
+                            navController.navigate(Route.Archive)
                         }
                     )
                 }

@@ -54,4 +54,6 @@ dependencies {
     implementation(libs.insert.koin.koinComposeViewmodel)
 
     implementation(libs.kotlinx.serialization.json)
+
+    implementation(libs.androidx.media3.exoplayer)
 }

@@ -12,7 +12,7 @@
     <!-- StartScreen Main Action -->
     <string name="start_record_desc">Начать запись</string>
     <string name="sound_id_title">ShirpID</string>
-    <string name="show_history">Показать историю</string>
+    <string name="show_history">Архив записей</string>
     
     <!-- StartScreen Location Error -->
     <string name="location_error">Ошибка: %s</string>
@@ -41,7 +41,7 @@
     <string name="new_recording">Новая запись</string>
     
     <!-- RecordsHistoryScreen -->
-    <string name="saved_records">Сохраненные записи</string>
+    <string name="archive">Архив</string>
     <string name="back">Назад</string>
     <string name="delete_all">Удалить все</string>
     <string name="delete_all_records">Удалить все записи</string>

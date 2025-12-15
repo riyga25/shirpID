@@ -15,13 +15,14 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.navigation.NavController
+import androidx.core.net.toUri
 import data.models.Record
 import by.riyga.shirpid.ui.Route
 import by.riyga.shirpid.utils.LocalNavController
@@ -29,29 +30,50 @@ import org.koin.compose.viewmodel.koinViewModel
 import java.text.SimpleDateFormat
 import java.util.*
 import by.riyga.shirpid.presentation.R
+import by.riyga.shirpid.utils.deleteAudio
+import by.riyga.shirpid.utils.isAudioExists
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BirdHistoryScreen(
-    navController: NavController,
     viewModel: BirdHistoryViewModel = koinViewModel()
 ) {
+    val navController = LocalNavController.current
+    val context = LocalContext.current
     val state by viewModel.uiState.collectAsState()
     var showDeleteAllDialog by remember { mutableStateOf(false) }
+
+    LaunchedEffect(state.records) {
+        if (state.records.isNotEmpty()) {
+            val notFoundAudioIds = state.records.mapNotNull { record ->
+                val isExist = context.isAudioExists(record.audioFilePath)
+                if (isExist) null else record.timestamp
+            }
+            if (notFoundAudioIds.isNotEmpty()) {
+                viewModel.removeRecord(notFoundAudioIds)
+            }
+        }
+    }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(stringResource(R.string.saved_records)) },
+                title = { Text(stringResource(R.string.archive)) },
                 navigationIcon = {
                     IconButton(onClick = { navController.navigateUp() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = stringResource(R.string.back)
+                        )
                     }
                 },
                 actions = {
                     if (state.totalRecords > 0) {
                         IconButton(onClick = { showDeleteAllDialog = true }) {
-                            Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.delete_all))
+                            Icon(
+                                Icons.Default.Delete,
+                                contentDescription = stringResource(R.string.delete_all)
+                            )
                         }
                     }
                 },
@@ -123,6 +145,10 @@ fun BirdHistoryScreen(
             confirmButton = {
                 TextButton(
                     onClick = {
+                        state.records.map { it.audioFilePath }.forEach {
+                            context.deleteAudio(it.toUri())
+                        }
+
                         viewModel.deleteAllRecords()
                         showDeleteAllDialog = false
                     }
@@ -264,7 +290,5 @@ fun RecordCard(
 @Preview
 @Composable
 private fun Preview() {
-    BirdHistoryScreen(
-        navController = LocalNavController.current
-    )
+    BirdHistoryScreen()
 }
