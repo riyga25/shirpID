@@ -1,6 +1,7 @@
 package by.riyga.shirpid.ui.progress
 
 import android.util.Log
+import androidx.compose.runtime.Immutable
 import androidx.lifecycle.viewModelScope
 import data.LabelsRepository
 import data.database.RecordRepository
@@ -188,6 +189,7 @@ class ProgressViewModel(
 }
 
 class ProgressContract {
+    @Immutable
     data class State(
         val loading: Boolean = false,
         val locationInfo: LocationInfo? = null,

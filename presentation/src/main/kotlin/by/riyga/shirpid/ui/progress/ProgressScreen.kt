@@ -108,14 +108,16 @@ fun ProgressScreen(
     }
 
     LaunchedEffect(effect) {
-        when(val castEffect = effect) {
+        when (val castEffect = effect) {
             is ProgressContract.Effect.NotifyByHaptic -> {
                 haptic.performHapticFeedback(HapticFeedbackType.LongPress)
             }
+
             is ProgressContract.Effect.ShowResult -> {
                 navController.popBackStack()
                 navController.navigate(Route.DetectionResult(castEffect.id, false))
             }
+
             else -> {}
         }
     }
@@ -140,8 +142,6 @@ fun ProgressScreen(
     }
 
     Layout(
-        identifiedBirds = state.birds,
-        highlightedBirds = state.currentlyHeardBirds,
         onStop = { saveRecord ->
             val audio = service?.stop(saveRecord)
             if (saveRecord) {
@@ -154,25 +154,23 @@ fun ProgressScreen(
                 navController.navigateUp()
             }
         },
-        location = state.location.toStringLocation(),
-        place = state.locationInfo.toStringLocation(),
         timerFlow = viewModel.timer,
-        listState = lazyListState
+        listState = lazyListState,
+        state = state
     )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun Layout(
+    state: ProgressContract.State,
     listState: LazyListState,
-    identifiedBirds: Map<Int, IdentifiedBird>,
-    highlightedBirds: Set<Int>,
-    loading: Boolean = false,
-    location: String? = null,
-    place: String? = null,
     timerFlow: Flow<Long>,
     onStop: (saveRecord: Boolean) -> Unit
 ) {
+    val place = state.locationInfo.toStringLocation()
+    val location = state.location.toStringLocation()
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -184,7 +182,7 @@ private fun Layout(
                                 style = MaterialTheme.typography.labelMedium
                             )
                         }
-                        if (loading) {
+                        if (state.loading) {
                             CircularProgressIndicator()
                         } else {
                             location?.let { loc ->
@@ -221,11 +219,11 @@ private fun Layout(
             ),
             state = listState
         ) {
-            identifiedBirds.forEach {
+            state.birds.forEach {
                 item {
                     BirdRow(
                         bird = it.value.name,
-                        isHighlighted = it.key in highlightedBirds
+                        isHighlighted = it.key in state.currentlyHeardBirds
                     )
                 }
             }
@@ -250,7 +248,7 @@ fun RecordingControls(
                 MaterialTheme.colorScheme.surface,
                 shape = RoundedCornerShape(24.dp)
             )
-            .padding(vertical = 8.dp)
+            .padding(8.dp)
     ) {
         TextButton(
             onClick = onCancel,
