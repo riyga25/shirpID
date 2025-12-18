@@ -33,7 +33,7 @@
         </activity>
 
         <service
-            android:name=".utils.RecognizeService"
+            android:name=".presentation.utils.RecognizeService"
             android:foregroundServiceType="microphone"
             android:exported="false">
         </service>
