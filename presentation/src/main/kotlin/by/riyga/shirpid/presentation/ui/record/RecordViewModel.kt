@@ -1,4 +1,4 @@
-package by.riyga.shirpid.presentation.ui.detection_result
+package by.riyga.shirpid.presentation.ui.record
 
 import androidx.lifecycle.viewModelScope
 import by.riyga.shirpid.data.LabelsRepository
@@ -14,15 +14,15 @@ import by.riyga.shirpid.presentation.utils.UiState
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
-class DetectionResultViewModel(
+class RecordViewModel(
     private val recordId: Long,
     private val recordRepository: RecordRepository,
     private val labelsRepository: LabelsRepository,
     private val audioPlayer: AudioPlayer
-) : BaseViewModel<DetectionResultContract.State, DetectionResultContract.Effect, DetectionResultContract.Event>() {
+) : BaseViewModel<RecordContract.State, RecordContract.Effect, RecordContract.Event>() {
 
-    override fun createInitialState(): DetectionResultContract.State =
-        DetectionResultContract.State()
+    override fun createInitialState(): RecordContract.State =
+        RecordContract.State()
 
     val mediaState: StateFlow<PlayerState> = audioPlayer.playerState
 
@@ -30,17 +30,17 @@ class DetectionResultViewModel(
         getRecord()
     }
 
-    override fun handleEvent(event: DetectionResultContract.Event) {
+    override fun handleEvent(event: RecordContract.Event) {
         super.handleEvent(event)
         when(event) {
-            is DetectionResultContract.Event.RemoveRecord -> {
+            is RecordContract.Event.RemoveRecord -> {
                 viewModelScope.launch {
                     currentState.record?.timestamp?.let {
                         recordRepository.deleteRecordByTimestamp(it)
                     }
                 }
                 currentState.record?.let {
-                    setEffect { DetectionResultContract.Effect.RecordRemoved(it.audioFilePath) }
+                    setEffect { RecordContract.Effect.RecordRemoved(it.audioFilePath) }
                 }
             }
         }
@@ -96,7 +96,7 @@ class DetectionResultViewModel(
 }
 
 
-class DetectionResultContract {
+class RecordContract {
     data class State(
         val loading: Boolean = false,
         val error: Boolean = false,

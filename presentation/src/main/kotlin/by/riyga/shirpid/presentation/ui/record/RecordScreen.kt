@@ -1,5 +1,8 @@
-package by.riyga.shirpid.presentation.ui.detection_result
+package by.riyga.shirpid.presentation.ui.record
 
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -14,6 +17,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.PauseCircle
 import androidx.compose.material.icons.filled.PlayCircle
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.*
 import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.runtime.*
@@ -29,6 +33,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import by.riyga.shirpid.presentation.ui.Route
@@ -46,13 +51,13 @@ import by.riyga.shirpid.presentation.utils.isAudioExists
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun BirdDetectionResultScreen(
+fun RecordScreen(
     recordId: Long,
     fromArchive: Boolean = false
 ) {
     val context = LocalContext.current
     val navController = LocalNavController.current
-    val viewModel: DetectionResultViewModel = koinViewModel {
+    val viewModel: RecordViewModel = koinViewModel {
         parametersOf(recordId)
     }
     val state by viewModel.uiState.collectAsState()
@@ -71,7 +76,7 @@ fun BirdDetectionResultScreen(
 
     LaunchedEffect(effect) {
         when (val castEffect = effect) {
-            is DetectionResultContract.Effect.RecordRemoved -> {
+            is RecordContract.Effect.RecordRemoved -> {
                 context.deleteAudio(castEffect.uri.toUri())
                 onBack()
             }
@@ -85,7 +90,7 @@ fun BirdDetectionResultScreen(
         state.record?.let {
             val isExist = context.isAudioExists(it.audioFilePath)
             if (!isExist) {
-                viewModel.setEvent(DetectionResultContract.Event.RemoveRecord)
+                viewModel.setEvent(RecordContract.Event.RemoveRecord)
             }
         }
     }
@@ -108,7 +113,23 @@ fun BirdDetectionResultScreen(
                 },
                 actions = {
                     IconButton(
-                        onClick = { viewModel.setEvent(DetectionResultContract.Event.RemoveRecord) }
+                        onClick = {
+                            record?.audioFilePath?.let {audio ->
+                                share(
+                                    context = context,
+                                    subject = audio.toUri(),
+                                    chooserText = null
+                                )
+                            }
+                        }
+                    ) {
+                        Icon(
+                            Icons.Default.Share,
+                            contentDescription = "Share"
+                        )
+                    }
+                    IconButton(
+                        onClick = { viewModel.setEvent(RecordContract.Event.RemoveRecord) }
                     ) {
                         Icon(
                             Icons.Default.Delete,
@@ -350,6 +371,21 @@ fun DetectedBirdCard(
             }
         }
     }
+}
+
+fun share(
+    context: Context,
+    subject: Uri,
+    chooserText: String?
+) {
+    val sendIntent: Intent = Intent().apply {
+        action = Intent.ACTION_SEND
+        putExtra(Intent.EXTRA_STREAM, subject)
+        type = "audio/x-wav"
+    }
+    val shareIntent = Intent.createChooser(sendIntent, chooserText)
+    shareIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+    ContextCompat.startActivity(context, shareIntent, null)
 }
 
 private fun formatTime(millis: Long?): String {

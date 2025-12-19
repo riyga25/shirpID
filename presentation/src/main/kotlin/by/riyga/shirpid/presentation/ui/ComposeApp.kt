@@ -7,7 +7,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
-import by.riyga.shirpid.presentation.ui.detection_result.BirdDetectionResultScreen
+import by.riyga.shirpid.presentation.ui.record.RecordScreen
 import by.riyga.shirpid.presentation.ui.history.BirdHistoryScreen
 import by.riyga.shirpid.presentation.ui.progress.ProgressScreen
 import by.riyga.shirpid.presentation.ui.settings.LicenseScreen
@@ -75,7 +75,7 @@ fun AppNavHost(
 
         composable<Route.DetectionResult> { backStackEntry ->
             val route = backStackEntry.toRoute<Route.DetectionResult>()
-            BirdDetectionResultScreen(
+            RecordScreen(
                 recordId = route.recordId,
                 fromArchive = route.fromArchive
             )

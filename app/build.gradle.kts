@@ -15,7 +15,7 @@ android {
         applicationId = "by.riyga.shirpid"
         minSdk = libs.versions.minSdk.get().toInt()
         targetSdk = libs.versions.targetSdk.get().toInt()
-        versionCode = 2
+        versionCode = 3
         versionName = "1.0.0-alpha02"
         resourceConfigurations += setOf("ru", "en")
 
