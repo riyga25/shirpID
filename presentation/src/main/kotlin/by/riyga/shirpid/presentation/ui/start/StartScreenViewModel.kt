@@ -118,7 +118,10 @@ class StartScreenViewModel(
                 _uiState.update {
                     it.copy(
                         currentLocation = location,
-                        isLoadingLocation = false
+                        isLoadingLocation = false,
+                        locationError = if (location == null) {
+                            "Location Error"
+                        } else null
                     )
                 }
             } catch (e: SecurityException) {

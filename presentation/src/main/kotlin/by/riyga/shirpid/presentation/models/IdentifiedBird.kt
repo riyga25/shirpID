@@ -5,6 +5,6 @@ data class IdentifiedBird(
     val name: String,
     val confidence: Float
 ) {
-    val conName = name.substringAfter("_")
+    val comName = name.substringAfter("_")
     val latName = name.substringBefore("_")
 }

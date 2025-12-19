@@ -69,4 +69,9 @@
     <string name="selected">Selected</string>
     <string name="license">License</string>
     <string name="eavesdrop">We eavesdrop on the birds...</string>
+
+    <plurals name="birds_count">
+        <item quantity="one">%d bird</item>
+        <item quantity="other">%d birds</item>
+    </plurals>
 </resources>

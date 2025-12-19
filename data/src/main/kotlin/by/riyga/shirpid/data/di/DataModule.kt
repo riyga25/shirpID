@@ -35,7 +35,7 @@ val dataModule = module {
     single<RecordRepository> { RecordRepositoryImpl(get()) }
     single<LocationRepository> { LocationRepositoryImpl(get()) }
     single { provideGeocoderApi() }
-    single<GeocoderDataSource> { GeocoderDataSourceImpl(get()) }
+    single<GeocoderDataSource> { GeocoderDataSourceImpl(get(), get()) }
 }
 
 private val json = Json {

@@ -179,7 +179,7 @@ fun StartScreen(
                             }
                         }
                     )
-                } else if (!state.isLoadingLocation && state.locationError == null) {
+                } else if (!state.isLoadingLocation) {
                     MainActionButton(
                         onStart = {
                             state.currentLocation?.let {
@@ -333,53 +333,6 @@ fun SettingsRedirectDialog(onDismiss: () -> Unit, onConfirm: () -> Unit) {
                         Text(stringResource(R.string.go_to_settings))
                     }
                 }
-            }
-        }
-    }
-}
-
-fun Modifier.rippleLoadingAnimationModifier(
-    isActive: Boolean,
-    color: Color,
-    circles: Int = 3,
-    expandFactor: Float = 5f,
-    durationMillis: Int = 5000,
-): Modifier {
-    if (!isActive) return this
-
-    return composed {
-        val transition = rememberInfiniteTransition(label = "ripple_transition")
-
-        val translateAnimations = List(circles) { index ->
-            transition.animateFloat(
-                initialValue = 0f,
-                targetValue = 1f,
-                animationSpec = infiniteRepeatable(
-                    animation = tween(
-                        durationMillis = durationMillis,
-                        easing = LinearEasing,
-                    ),
-                    repeatMode = RepeatMode.Restart,
-                    initialStartOffset = StartOffset(index * (durationMillis / circles))
-                ),
-                label = "ripple_circle_$index"
-            )
-        }
-
-        this.drawBehind {
-            val maxRadius = (maxOf(size.height, size.width) / 2) * expandFactor
-            translateAnimations.forEach { animatable ->
-                val alpha = 1f - animatable.value
-                drawCircle(
-                    color = color.copy(
-                        alpha = alpha.coerceIn(
-                            0f,
-                            1f
-                        )
-                    ), // Убедимся, что alpha в границах
-                    radius = maxRadius * animatable.value,
-                    center = size.center
-                )
             }
         }
     }

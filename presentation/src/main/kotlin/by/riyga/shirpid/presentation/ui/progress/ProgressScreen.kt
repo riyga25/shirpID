@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
 import android.os.IBinder
+import android.widget.Toast
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -19,6 +20,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -44,12 +46,16 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import by.riyga.shirpid.presentation.R
 import by.riyga.shirpid.presentation.ui.Route
 import by.riyga.shirpid.presentation.utils.LocalNavController
 import by.riyga.shirpid.presentation.utils.RecognizeService
+import by.riyga.shirpid.presentation.utils.getAddress
+import by.riyga.shirpid.presentation.utils.getConfidenceColor
+import by.riyga.shirpid.presentation.utils.toPercentString
 import by.riyga.shirpid.presentation.utils.toStringLocation
 import kotlinx.coroutines.flow.Flow
 import org.koin.compose.viewmodel.koinViewModel
@@ -147,7 +153,7 @@ fun ProgressScreen(
                 if (audio != null) {
                     viewModel.setEvent(ProgressContract.Event.SaveRecord(audio))
                 } else {
-                    // TODO show error ?!
+                    Toast.makeText(context, "Error", Toast.LENGTH_SHORT).show()
                 }
             } else {
                 navController.navigateUp()
@@ -167,7 +173,7 @@ private fun Layout(
     timerFlow: Flow<Long>,
     onStop: (saveRecord: Boolean) -> Unit
 ) {
-    val place = state.locationInfo.toStringLocation()
+    val place = state.geoDateInfo?.getAddress()
     val location = state.location.toStringLocation()
 
     Scaffold(
@@ -178,7 +184,10 @@ private fun Layout(
                         if (!place.isNullOrEmpty()) {
                             Text(
                                 text = place,
-                                style = MaterialTheme.typography.labelMedium
+                                style = MaterialTheme.typography.labelMedium,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier.padding(end = 16.dp)
                             )
                         }
                         if (state.loading) {
@@ -211,6 +220,8 @@ private fun Layout(
         containerColor = MaterialTheme.colorScheme.surfaceContainer,
         contentColor = MaterialTheme.colorScheme.onSurface
     ) { paddings ->
+        val lastKey = state.birds.keys.lastOrNull()
+
         LazyColumn(
             contentPadding = PaddingValues(
                 bottom = paddings.calculateBottomPadding(),
@@ -221,8 +232,10 @@ private fun Layout(
             state.birds.forEach {
                 item {
                     BirdRow(
-                        bird = it.value.name,
-                        isHighlighted = it.key in state.currentlyHeardBirds
+                        name = it.value.comName,
+                        isHighlighted = it.key in state.currentlyHeardBirds,
+                        confidence = it.value.confidence,
+                        showDivider = it.key != lastKey
                     )
                 }
             }
@@ -285,9 +298,16 @@ fun RecordingControls(
 }
 
 @Composable
-fun BirdRow(bird: String, isHighlighted: Boolean) {
+fun BirdRow(
+    name: String,
+    isHighlighted: Boolean,
+    confidence: Float,
+    showDivider: Boolean = true
+) {
     val backgroundColor by animateColorAsState(
-        targetValue = if (isHighlighted) Color.Yellow.copy(alpha = 0.3F) else Color.Transparent,
+        targetValue = if (isHighlighted) {
+            MaterialTheme.colorScheme.primary.copy(alpha = 0.3F)
+        } else Color.Transparent,
         animationSpec = tween(durationMillis = 500)
     )
 
@@ -301,11 +321,20 @@ fun BirdRow(bird: String, isHighlighted: Boolean) {
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Text(
-                text = bird.substringAfter("_"),
+                text = name,
                 fontWeight = if (isHighlighted) FontWeight.SemiBold else FontWeight.Normal
             )
+            Text(
+                text = confidence.toPercentString(),
+                modifier = Modifier
+                    .background(confidence.getConfidenceColor(), CircleShape)
+                    .padding(4.dp),
+                style = MaterialTheme.typography.labelSmall
+            )
         }
-        HorizontalDivider()
+        if (showDivider) {
+            HorizontalDivider()
+        }
     }
 }
 

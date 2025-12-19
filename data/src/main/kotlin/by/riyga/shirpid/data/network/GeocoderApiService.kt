@@ -11,6 +11,7 @@ interface GeocoderApiService {
         @Query("lat") latitude: Double,
         @Query("lon") longitude: Double,
         @Query("format") format: String = "json",
-        @Query("accept-language") language: String = "ru"
+        @Query("accept-language") language: String = "ru",
+        @Query("zoom") zoom: Int = 10,
     ): LocationIQResponse
 }

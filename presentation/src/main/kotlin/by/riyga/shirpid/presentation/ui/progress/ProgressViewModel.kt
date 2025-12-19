@@ -11,11 +11,12 @@ import by.riyga.shirpid.data.models.LocationData
 import by.riyga.shirpid.data.models.Record
 import by.riyga.shirpid.data.network.GeocoderDataSource
 import by.riyga.shirpid.presentation.models.IdentifiedBird
-import by.riyga.shirpid.data.models.LocationInfo
+import by.riyga.shirpid.data.models.GeoDateInfo
 import by.riyga.shirpid.presentation.utils.BaseViewModel
 import by.riyga.shirpid.presentation.utils.UiEffect
 import by.riyga.shirpid.presentation.utils.UiEvent
 import by.riyga.shirpid.presentation.utils.UiState
+import by.riyga.shirpid.presentation.utils.getAddress
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -65,12 +66,11 @@ class ProgressViewModel(
 
     private fun addIdentifiedBird(birdIndex: Int, confidence: Float) {
         if (confidence * 100 > 30) {
-            val currentList = mutableMapOf<Int, IdentifiedBird>()
-                .apply {
-                    putAll(uiState.value.birds)
-                }
+            val currentList = uiState.value.birds.toMutableMap()
 
-            if (birdIndex !in currentList) {
+            val existing = currentList[birdIndex]
+
+            if (existing == null || confidence > existing.confidence) {
                 currentList[birdIndex] = IdentifiedBird(
                     index = birdIndex,
                     name = labelsRepository.getLabel(birdIndex),
@@ -79,10 +79,13 @@ class ProgressViewModel(
 
                 setState {
                     copy(birds = currentList.toMap())
-                }.run {
+                }
+
+                if (existing == null) {
                     setEffect { ProgressContract.Effect.NotifyByHaptic() }
                 }
             }
+
             highlightCurrent(birdIndex)
         } else {
             println("ProgressScreen: less than 30% -> $confidence = $birdIndex")
@@ -120,7 +123,7 @@ class ProgressViewModel(
                     }.toList(),
                     latitude = currentState.location?.latitude,
                     longitude = currentState.location?.longitude,
-                    locationName = currentState.locationInfo?.let { "${it.city}, ${it.country}" },
+                    locationName = currentState.geoDateInfo?.getAddress(),
                     audioFilePath = audioPath
                 )
 
@@ -147,19 +150,19 @@ class ProgressViewModel(
             setState { copy(location = loc, loading = false) }
 
             if (loc != null) {
-                getLocationInfo(loc)
+                getGeocodeLocation(loc)
             }
         }
     }
 
-    private fun getLocationInfo(location: LocationData) {
+    private fun getGeocodeLocation(location: LocationData) {
         viewModelScope.launch {
             try {
-                val locationInfo = geocoderDataSource.getLocationInfo(
+                val geoDateInfo = geocoderDataSource.getLocationInfo(
                     location.latitude,
                     location.longitude
                 )
-                setState { copy(locationInfo = locationInfo) }
+                setState { copy(geoDateInfo = geoDateInfo) }
             } catch (err: Throwable) {
                 Log.e("APP", err.localizedMessage ?: "Unknown error")
             }
@@ -192,7 +195,7 @@ class ProgressContract {
     @Immutable
     data class State(
         val loading: Boolean = false,
-        val locationInfo: LocationInfo? = null,
+        val geoDateInfo: GeoDateInfo? = null,
         val location: LocationData? = null,
         val savingRecord: Boolean = false,
         val saveError: String? = null,

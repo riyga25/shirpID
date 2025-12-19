@@ -11,7 +11,10 @@ data class LocationIQAddress(
     val municipality: String? = null,
     val road: String? = null,
     val suburb: String? = null,
+    val viewpoint: String? = null,
+    val region: String? = null,
     val state: String? = null,
+    val county: String? = null,
     val postcode: String? = null,
     val country: String,
     @SerialName("country_code")

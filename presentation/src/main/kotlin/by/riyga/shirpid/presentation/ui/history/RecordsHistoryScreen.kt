@@ -16,6 +16,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -248,6 +249,7 @@ fun RecordCard(
     record: Record,
     onClick: () -> Unit = {}
 ) {
+    val birdsSize = record.birds.size
     val dateFormat = SimpleDateFormat("MMM d", Locale.getDefault())
     val dateStr = dateFormat.format(Date(record.timestamp))
     val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
@@ -280,7 +282,7 @@ fun RecordCard(
         )
         Spacer(modifier = Modifier.height(4.dp))
         Text(
-            text = "$timeStr • ${record.birds.size} ${stringResource(R.string.birds)}",
+            text = "$timeStr • ${pluralStringResource(R.plurals.birds_count, birdsSize, birdsSize)}",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )

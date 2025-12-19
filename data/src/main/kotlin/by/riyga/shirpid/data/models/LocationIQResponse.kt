@@ -16,17 +16,18 @@ data class LocationIQResponse(
     @SerialName("place_id")
     val placeId: String
 ) {
-    fun toDomain(): LocationInfo {
-        return LocationInfo(
+    fun toDomain(): GeoDateInfo {
+        return GeoDateInfo(
             latitude = lat.toDoubleOrNull() ?: 0.0,
             longitude = lon.toDoubleOrNull() ?: 0.0,
             city = address.city ?: address.town ?: address.village ?: address.municipality ?: "",
             street = address.road ?: "",
             houseNumber = address.houseNumber ?: "",
-            fullAddress = displayName,
+            displayName = displayName,
             postcode = address.postcode ?: "",
             country = address.country,
-            countryCode = address.countryCode
+            countryCode = address.countryCode,
+            state = address.state ?: ""
         )
     }
 }

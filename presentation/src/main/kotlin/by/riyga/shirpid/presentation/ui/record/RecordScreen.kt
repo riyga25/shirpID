@@ -47,7 +47,9 @@ import java.util.Date
 import java.util.Locale
 import by.riyga.shirpid.presentation.R
 import by.riyga.shirpid.presentation.utils.deleteAudio
+import by.riyga.shirpid.presentation.utils.getConfidenceColor
 import by.riyga.shirpid.presentation.utils.isAudioExists
+import by.riyga.shirpid.presentation.utils.toPercentString
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -114,7 +116,7 @@ fun RecordScreen(
                 actions = {
                     IconButton(
                         onClick = {
-                            record?.audioFilePath?.let {audio ->
+                            record?.audioFilePath?.let { audio ->
                                 share(
                                     context = context,
                                     subject = audio.toUri(),
@@ -152,12 +154,16 @@ fun RecordScreen(
                         .fillMaxWidth()
                         .navigationBarsPadding()
                 ) {
-                    OutlinedButton(
+                    Button(
                         onClick = {
                             navController.popBackStack()
                             navController.navigate(Route.Archive)
                         },
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                            contentColor = MaterialTheme.colorScheme.onSurface
+                        )
                     ) {
                         Text(stringResource(R.string.archive))
                     }
@@ -196,8 +202,7 @@ fun RecordScreen(
                     if (record.locationName != null) {
                         Text(
                             text = record.locationName ?: "",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold
+                            style = MaterialTheme.typography.bodyMedium
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                     }
@@ -345,7 +350,7 @@ fun DetectedBirdCard(
                 )
                 if (bird.name.contains("_")) {
                     Text(
-                        text = bird.name.substringBefore("_"),
+                        text = bird.comName,
                         style = MaterialTheme.typography.bodyMedium,
                         fontStyle = FontStyle.Italic,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -356,15 +361,11 @@ fun DetectedBirdCard(
             // Confidence badge
             Surface(
                 shape = RoundedCornerShape(12.dp),
-                color = when {
-                    bird.confidence >= 0.8f -> MaterialTheme.colorScheme.primaryContainer
-                    bird.confidence >= 0.6f -> MaterialTheme.colorScheme.secondaryContainer
-                    else -> MaterialTheme.colorScheme.tertiaryContainer
-                }
+                color = bird.confidence.getConfidenceColor()
             ) {
                 Text(
-                    text = "${(bird.confidence * 100).toInt()}%",
-                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                    text = bird.confidence.toPercentString(),
+                    modifier = Modifier.padding(4.dp),
                     style = MaterialTheme.typography.labelSmall,
                     fontWeight = FontWeight.Bold
                 )

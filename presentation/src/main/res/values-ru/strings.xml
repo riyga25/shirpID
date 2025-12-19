@@ -69,4 +69,11 @@
     <string name="selected">Выбрано</string>
     <string name="license">Лицензия</string>
     <string name="eavesdrop">Подслушиваем пичуг...</string>
+
+    <plurals name="birds_count">
+        <item quantity="one">%d птица</item>
+        <item quantity="few">%d птицы</item>
+        <item quantity="many">%d птиц</item>
+        <item quantity="other">%d птицы</item>
+    </plurals>
 </resources>
