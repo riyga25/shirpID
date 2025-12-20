@@ -46,6 +46,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import by.riyga.shirpid.presentation.R
+import by.riyga.shirpid.presentation.utils.AnalyticsUtil
 import by.riyga.shirpid.presentation.utils.deleteAudio
 import by.riyga.shirpid.presentation.utils.getConfidenceColor
 import by.riyga.shirpid.presentation.utils.isAudioExists
@@ -116,6 +117,7 @@ fun RecordScreen(
                 actions = {
                     IconButton(
                         onClick = {
+                            AnalyticsUtil.logEvent("share record")
                             record?.audioFilePath?.let { audio ->
                                 share(
                                     context = context,
@@ -131,7 +133,10 @@ fun RecordScreen(
                         )
                     }
                     IconButton(
-                        onClick = { viewModel.setEvent(RecordContract.Event.RemoveRecord) }
+                        onClick = {
+                            AnalyticsUtil.logEvent("delete record")
+                            viewModel.setEvent(RecordContract.Event.RemoveRecord)
+                        }
                     ) {
                         Icon(
                             Icons.Default.Delete,
@@ -156,6 +161,7 @@ fun RecordScreen(
                 ) {
                     Button(
                         onClick = {
+                            AnalyticsUtil.logEvent("navigate to history")
                             navController.popBackStack()
                             navController.navigate(Route.Archive)
                         },
@@ -170,6 +176,7 @@ fun RecordScreen(
                     Spacer(Modifier.size(8.dp))
                     Button(
                         onClick = {
+                            AnalyticsUtil.logEvent("navigate to progress")
                             navController.popBackStack()
                             navController.navigate(Route.Progress)
                         },
@@ -282,6 +289,7 @@ fun RecordScreen(
                                 .clickable(
                                     role = Role.Button,
                                     onClick = {
+                                        AnalyticsUtil.logEvent("click play/stop button")
                                         if (mediaState.isPlaying) {
                                             viewModel.pauseAudio()
                                         } else {

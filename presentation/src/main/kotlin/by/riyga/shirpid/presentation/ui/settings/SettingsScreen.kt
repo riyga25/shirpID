@@ -32,6 +32,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import by.riyga.shirpid.presentation.R
 import by.riyga.shirpid.data.models.Language
 import by.riyga.shirpid.presentation.ui.Route
+import by.riyga.shirpid.presentation.utils.AnalyticsUtil
 import by.riyga.shirpid.presentation.utils.LocalNavController
 import org.koin.compose.viewmodel.koinViewModel
 import java.util.Locale
@@ -74,6 +75,7 @@ fun SettingsScreen(
             LanguagesBlock(
                 currentLanguage = currentLanguage,
                 onChooseLanguage = {
+                    AnalyticsUtil.logEvent("change language")
                     viewModel.setLanguage(it)
                     updateAppLocale(context, it.code)
                 }
@@ -84,7 +86,10 @@ fun SettingsScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(MaterialTheme.colorScheme.surface)
-                    .clickable { navController.navigate(Route.License) }
+                    .clickable {
+                        AnalyticsUtil.logEvent("navigate to license")
+                        navController.navigate(Route.License)
+                    }
                     .padding(16.dp)
             )
         }

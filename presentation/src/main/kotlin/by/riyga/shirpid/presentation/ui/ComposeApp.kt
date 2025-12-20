@@ -2,9 +2,12 @@ package by.riyga.shirpid.presentation.ui
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import by.riyga.shirpid.presentation.ui.record.RecordScreen
@@ -14,12 +17,26 @@ import by.riyga.shirpid.presentation.ui.settings.LicenseScreen
 import by.riyga.shirpid.presentation.ui.settings.SettingsScreen
 import by.riyga.shirpid.presentation.ui.start.StartScreen
 import by.riyga.shirpid.presentation.theme.AppTheme
+import by.riyga.shirpid.presentation.utils.AnalyticsUtil
 import by.riyga.shirpid.presentation.utils.LocalNavController
 import kotlinx.serialization.Serializable
 
 @Composable
 fun ComposeApp() {
     val navController = rememberNavController()
+    val backStackEntry by navController.currentBackStackEntryAsState()
+
+    LaunchedEffect(backStackEntry) {
+        val screen = backStackEntry
+            ?.destination
+            ?.route
+            ?.substringAfter("Route.")
+            ?.substringBefore("/")
+
+        if (screen != null) {
+            AnalyticsUtil.screenView(screen)
+        }
+    }
 
     AppTheme {
         CompositionLocalProvider(LocalNavController provides navController) {
@@ -41,7 +58,7 @@ sealed interface Route {
     data object Archive : Route
 
     @Serializable
-    data class DetectionResult(
+    data class Record(
         val recordId: Long,
         val fromArchive: Boolean
     ) : Route
@@ -73,8 +90,8 @@ fun AppNavHost(
             BirdHistoryScreen()
         }
 
-        composable<Route.DetectionResult> { backStackEntry ->
-            val route = backStackEntry.toRoute<Route.DetectionResult>()
+        composable<Route.Record> { backStackEntry ->
+            val route = backStackEntry.toRoute<Route.Record>()
             RecordScreen(
                 recordId = route.recordId,
                 fromArchive = route.fromArchive

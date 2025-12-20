@@ -38,6 +38,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import by.riyga.shirpid.presentation.R
 import by.riyga.shirpid.presentation.ui.Route
+import by.riyga.shirpid.presentation.utils.AnalyticsUtil
 import by.riyga.shirpid.presentation.utils.LocalNavController
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -117,6 +118,7 @@ fun StartScreen(
                 },
                 actions = {
                     IconButton(onClick = {
+                        AnalyticsUtil.logEvent("navigate to settings")
                         navController.navigate(Route.Settings)
                     }) {
                         Icon(
@@ -182,11 +184,13 @@ fun StartScreen(
                 } else if (!state.isLoadingLocation) {
                     MainActionButton(
                         onStart = {
+                            AnalyticsUtil.logEvent("navigate to progress")
                             state.currentLocation?.let {
                                 navController.navigate(Route.Progress)
                             }
                         },
                         onShowHistory = {
+                            AnalyticsUtil.logEvent("navigate to history")
                             navController.navigate(Route.Archive)
                         }
                     )

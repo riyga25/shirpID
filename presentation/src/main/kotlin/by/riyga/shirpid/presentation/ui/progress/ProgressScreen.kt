@@ -6,6 +6,7 @@ import android.content.Intent
 import android.content.ServiceConnection
 import android.os.IBinder
 import android.widget.Toast
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -51,6 +52,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import by.riyga.shirpid.presentation.R
 import by.riyga.shirpid.presentation.ui.Route
+import by.riyga.shirpid.presentation.utils.AnalyticsUtil
 import by.riyga.shirpid.presentation.utils.LocalNavController
 import by.riyga.shirpid.presentation.utils.RecognizeService
 import by.riyga.shirpid.presentation.utils.getAddress
@@ -120,7 +122,7 @@ fun ProgressScreen(
 
             is ProgressContract.Effect.ShowResult -> {
                 navController.popBackStack()
-                navController.navigate(Route.DetectionResult(castEffect.id, false))
+                navController.navigate(Route.Record(castEffect.id, false))
             }
 
             else -> {}
@@ -146,16 +148,23 @@ fun ProgressScreen(
         }
     }
 
+    BackHandler {
+        AnalyticsUtil.logEvent("cancel record")
+        navController.popBackStack()
+    }
+
     Layout(
         onStop = { saveRecord ->
             val audio = service?.stop(saveRecord)
             if (saveRecord) {
+                AnalyticsUtil.logEvent("save record")
                 if (audio != null) {
                     viewModel.setEvent(ProgressContract.Event.SaveRecord(audio))
                 } else {
                     Toast.makeText(context, "Error", Toast.LENGTH_SHORT).show()
                 }
             } else {
+                AnalyticsUtil.logEvent("cancel record")
                 navController.navigateUp()
             }
         },

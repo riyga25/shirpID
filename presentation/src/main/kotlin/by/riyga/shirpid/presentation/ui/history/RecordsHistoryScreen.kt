@@ -31,6 +31,7 @@ import org.koin.compose.viewmodel.koinViewModel
 import java.text.SimpleDateFormat
 import java.util.*
 import by.riyga.shirpid.presentation.R
+import by.riyga.shirpid.presentation.utils.AnalyticsUtil
 import by.riyga.shirpid.presentation.utils.deleteAudio
 import by.riyga.shirpid.presentation.utils.isAudioExists
 
@@ -70,7 +71,9 @@ fun BirdHistoryScreen(
                 },
                 actions = {
                     if (state.totalRecords > 0) {
-                        IconButton(onClick = { showDeleteAllDialog = true }) {
+                        IconButton(
+                            onClick = { showDeleteAllDialog = true }
+                        ) {
                             Icon(
                                 Icons.Default.Delete,
                                 contentDescription = stringResource(R.string.delete_all)
@@ -125,8 +128,9 @@ fun BirdHistoryScreen(
                         RecordCard(
                             record = record,
                             onClick = {
+                                AnalyticsUtil.logEvent("navigate to record")
                                 navController.navigate(
-                                    Route.DetectionResult(record.timestamp, true)
+                                    Route.Record(record.timestamp, true)
                                 )
                             }
                         )
@@ -149,7 +153,7 @@ fun BirdHistoryScreen(
                         state.records.map { it.audioFilePath }.forEach {
                             context.deleteAudio(it.toUri())
                         }
-
+                        AnalyticsUtil.logEvent("delete all records")
                         viewModel.deleteAllRecords()
                         showDeleteAllDialog = false
                     }
