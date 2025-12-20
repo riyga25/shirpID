@@ -34,6 +34,7 @@ import by.riyga.shirpid.data.models.Language
 import by.riyga.shirpid.presentation.ui.Route
 import by.riyga.shirpid.presentation.utils.AnalyticsUtil
 import by.riyga.shirpid.presentation.utils.LocalNavController
+import by.riyga.shirpid.presentation.utils.updateAppLocale
 import org.koin.compose.viewmodel.koinViewModel
 import java.util.Locale
 
@@ -77,7 +78,7 @@ fun SettingsScreen(
                 onChooseLanguage = {
                     AnalyticsUtil.logEvent("change language")
                     viewModel.setLanguage(it)
-                    updateAppLocale(context, it.code)
+                    context.updateAppLocale(it.code)
                 }
             )
             Spacer(Modifier.size(16.dp))
@@ -98,7 +99,7 @@ fun SettingsScreen(
 
 @Composable
 private fun LanguagesBlock(
-    currentLanguage: Language,
+    currentLanguage: Language?,
     onChooseLanguage: (Language) -> Unit
 ) {
     Column(
@@ -146,21 +147,5 @@ fun LanguageItem(
                 tint = MaterialTheme.colorScheme.primary
             )
         }
-    }
-}
-
-fun updateAppLocale(context: Context, languageCode: String) {
-    val locale = Locale(languageCode)
-    Locale.setDefault(locale)
-
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-        val localeManager = context.getSystemService(Context.LOCALE_SERVICE) as LocaleManager
-        localeManager.applicationLocales = LocaleList(locale)
-    } else {
-        @Suppress("DEPRECATION")
-        val config = context.resources.configuration
-        config.setLocale(locale)
-        @Suppress("DEPRECATION")
-        context.resources.updateConfiguration(config, context.resources.displayMetrics)
     }
 }

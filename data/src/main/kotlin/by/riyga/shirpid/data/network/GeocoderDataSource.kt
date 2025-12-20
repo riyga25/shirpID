@@ -1,6 +1,7 @@
 package by.riyga.shirpid.data.network
 
 import by.riyga.shirpid.data.models.GeoDateInfo
+import by.riyga.shirpid.data.models.Language
 import by.riyga.shirpid.data.preferences.AppPreferences
 import kotlinx.coroutines.flow.first
 
@@ -24,7 +25,7 @@ internal class GeocoderDataSourceImpl(
                 apiKey = ke1 + ke2 + ke3,
                 latitude = latitude,
                 longitude = longitude,
-                language = language.code
+                language = language?.code ?: Language.DEFAULT.code
             )
             response.toDomain()
         } catch (e: Exception) {

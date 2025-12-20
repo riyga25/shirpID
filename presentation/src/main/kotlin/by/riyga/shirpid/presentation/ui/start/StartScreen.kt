@@ -269,7 +269,7 @@ private fun PermissionItem(
             modifier = Modifier.padding(horizontal = 16.dp)
         )
         OutlinedButton(onClick = onClick) {
-            Text(text = buttonText)
+            Text(text = buttonText, textAlign = TextAlign.Center)
         }
     }
 }

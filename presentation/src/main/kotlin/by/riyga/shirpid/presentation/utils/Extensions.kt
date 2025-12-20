@@ -1,8 +1,11 @@
 package by.riyga.shirpid.presentation.utils
 
+import android.app.LocaleManager
 import android.content.Context
 import android.content.pm.PackageManager
 import android.net.Uri
+import android.os.Build
+import android.os.LocaleList
 import android.provider.MediaStore
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.material3.MaterialTheme
@@ -99,6 +102,22 @@ fun Float.getConfidenceColor(): Color {
 
 fun Float.toPercentString(decimals: Int = 1): String {
     return String.format(Locale.US, "%.${decimals}f%%", this * 100)
+}
+
+fun Context.updateAppLocale(languageCode: String) {
+    val locale = Locale(languageCode)
+    Locale.setDefault(locale)
+
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        val localeManager = this.getSystemService(Context.LOCALE_SERVICE) as LocaleManager
+        localeManager.applicationLocales = LocaleList(locale)
+    } else {
+        @Suppress("DEPRECATION")
+        val config = this.resources.configuration
+        config.setLocale(locale)
+        @Suppress("DEPRECATION")
+        this.resources.updateConfiguration(config, this.resources.displayMetrics)
+    }
 }
 
 private fun String.takeUntilComma(maxCommas: Int): String {

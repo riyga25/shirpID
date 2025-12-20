@@ -4,12 +4,15 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
+import by.riyga.shirpid.data.preferences.AppPreferences
 import by.riyga.shirpid.presentation.ui.record.RecordScreen
 import by.riyga.shirpid.presentation.ui.history.BirdHistoryScreen
 import by.riyga.shirpid.presentation.ui.progress.ProgressScreen
@@ -19,12 +22,27 @@ import by.riyga.shirpid.presentation.ui.start.StartScreen
 import by.riyga.shirpid.presentation.theme.AppTheme
 import by.riyga.shirpid.presentation.utils.AnalyticsUtil
 import by.riyga.shirpid.presentation.utils.LocalNavController
+import by.riyga.shirpid.presentation.utils.updateAppLocale
 import kotlinx.serialization.Serializable
+import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
 fun ComposeApp() {
+    val context = LocalContext.current
     val navController = rememberNavController()
     val backStackEntry by navController.currentBackStackEntryAsState()
+    val viewModel: ComposeAppViewModel = koinViewModel()
+    val effect by viewModel.effect.collectAsStateWithLifecycle(null)
+
+    LaunchedEffect(effect) {
+        when (val effectCast = effect) {
+            is AppContract.Effect.LanguageUpdated -> {
+                context.updateAppLocale(effectCast.code)
+            }
+
+            else -> {}
+        }
+    }
 
     LaunchedEffect(backStackEntry) {
         val screen = backStackEntry

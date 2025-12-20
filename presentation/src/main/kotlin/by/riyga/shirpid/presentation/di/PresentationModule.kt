@@ -2,6 +2,7 @@ package by.riyga.shirpid.presentation.di
 
 import by.riyga.shirpid.presentation.player.AudioPlayer
 import by.riyga.shirpid.presentation.player.MediaPlayerController
+import by.riyga.shirpid.presentation.ui.ComposeAppViewModel
 import by.riyga.shirpid.presentation.ui.record.RecordViewModel
 import by.riyga.shirpid.presentation.ui.history.BirdHistoryViewModel
 import by.riyga.shirpid.presentation.ui.progress.ProgressViewModel
@@ -17,4 +18,5 @@ val presentationModule = module {
     viewModelOf(::BirdHistoryViewModel)
     viewModelOf(::RecordViewModel)
     viewModelOf(::SettingsViewModel)
+    viewModelOf(::ComposeAppViewModel)
 }

@@ -17,12 +17,11 @@ private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(na
 class AppPreferences(private val context: Context) {
     companion object {
         val LANGUAGE_KEY = stringPreferencesKey("language")
-        val DEFAULT_LANGUAGE = Language.ENGLISH.code
     }
 
-    val language: Flow<Language> = context.dataStore.data
+    val language: Flow<Language?> = context.dataStore.data
         .map { preferences ->
-            Language.fromCode(preferences[LANGUAGE_KEY] ?: DEFAULT_LANGUAGE)
+            Language.fromCode(preferences[LANGUAGE_KEY])
         }.distinctUntilChanged()
 
     suspend fun setLanguage(languageCode: String) {

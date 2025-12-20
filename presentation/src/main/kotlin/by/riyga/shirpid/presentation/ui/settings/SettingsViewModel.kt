@@ -13,11 +13,11 @@ class SettingsViewModel(
     private val appPreferences: AppPreferences
 ) : ViewModel() {
 
-    val currentLanguage: StateFlow<Language> = appPreferences.language
+    val currentLanguage: StateFlow<Language?> = appPreferences.language
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
-            initialValue = Language.fromCode(AppPreferences.DEFAULT_LANGUAGE)
+            initialValue = null
         )
 
     fun setLanguage(language: Language) {

@@ -23,7 +23,7 @@ class LabelsRepositoryImpl(
     init {
         externalScope.launch {
             appPreferences.language.collect { lang ->
-                loadLabels(lang)
+                loadLabels(lang ?: Language.DEFAULT)
             }
         }
     }
