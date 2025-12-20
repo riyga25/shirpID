@@ -16,7 +16,7 @@ android {
         minSdk = libs.versions.minSdk.get().toInt()
         targetSdk = libs.versions.targetSdk.get().toInt()
         versionCode = 3
-        versionName = "1.0.0-alpha02"
+        versionName = "1.0.0-alpha03"
         resourceConfigurations += setOf("ru", "en")
 
         ndk {

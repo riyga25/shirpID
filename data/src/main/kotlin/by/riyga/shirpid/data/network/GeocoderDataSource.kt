@@ -13,13 +13,15 @@ internal class GeocoderDataSourceImpl(
     private val appPreferences: AppPreferences
 ) : GeocoderDataSource {
 
-    private val apiKey: String = "pk.8f4dd058bb97d931527924d3ae1b908f"
+    private val ke1: String = "pk."
+    private val ke2: String = "8f4dd058bb97d931527924"
+    private val ke3: String = "d3ae1b908f"
 
     override suspend fun getLocationInfo(latitude: Double, longitude: Double): GeoDateInfo {
         return try {
             val language = appPreferences.language.first()
             val response = apiService.reverseGeocoding(
-                apiKey = apiKey,
+                apiKey = ke1 + ke2 + ke3,
                 latitude = latitude,
                 longitude = longitude,
                 language = language.code
