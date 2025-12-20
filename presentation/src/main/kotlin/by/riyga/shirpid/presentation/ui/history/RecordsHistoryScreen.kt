@@ -128,7 +128,7 @@ fun BirdHistoryScreen(
                         RecordCard(
                             record = record,
                             onClick = {
-                                AnalyticsUtil.logEvent("navigate to record")
+                                AnalyticsUtil.logEvent("navigate_to_record")
                                 navController.navigate(
                                     Route.Record(record.timestamp, true)
                                 )
@@ -153,7 +153,7 @@ fun BirdHistoryScreen(
                         state.records.map { it.audioFilePath }.forEach {
                             context.deleteAudio(it.toUri())
                         }
-                        AnalyticsUtil.logEvent("delete all records")
+                        AnalyticsUtil.logEvent("delete_all_records")
                         viewModel.deleteAllRecords()
                         showDeleteAllDialog = false
                     }

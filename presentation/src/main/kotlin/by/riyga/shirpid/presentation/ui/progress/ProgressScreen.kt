@@ -149,7 +149,7 @@ fun ProgressScreen(
     }
 
     BackHandler {
-        AnalyticsUtil.logEvent("cancel record")
+        AnalyticsUtil.logEvent("cancel_record")
         navController.popBackStack()
     }
 
@@ -157,14 +157,16 @@ fun ProgressScreen(
         onStop = { saveRecord ->
             val audio = service?.stop(saveRecord)
             if (saveRecord) {
-                AnalyticsUtil.logEvent("save record")
                 if (audio != null) {
+                    AnalyticsUtil.logEvent("save_record")
                     viewModel.setEvent(ProgressContract.Event.SaveRecord(audio))
                 } else {
                     Toast.makeText(context, "Error", Toast.LENGTH_SHORT).show()
+                    navController.navigateUp()
+                    AnalyticsUtil.logEvent("cancel_record_with_error")
                 }
             } else {
-                AnalyticsUtil.logEvent("cancel record")
+                AnalyticsUtil.logEvent("cancel_record")
                 navController.navigateUp()
             }
         },

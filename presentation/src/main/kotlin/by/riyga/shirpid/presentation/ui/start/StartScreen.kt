@@ -118,7 +118,7 @@ fun StartScreen(
                 },
                 actions = {
                     IconButton(onClick = {
-                        AnalyticsUtil.logEvent("navigate to settings")
+                        AnalyticsUtil.logEvent("navigate_to_settings")
                         navController.navigate(Route.Settings)
                     }) {
                         Icon(
@@ -184,13 +184,13 @@ fun StartScreen(
                 } else if (!state.isLoadingLocation) {
                     MainActionButton(
                         onStart = {
-                            AnalyticsUtil.logEvent("navigate to progress")
+                            AnalyticsUtil.logEvent("navigate_to_progress")
                             state.currentLocation?.let {
                                 navController.navigate(Route.Progress)
                             }
                         },
                         onShowHistory = {
-                            AnalyticsUtil.logEvent("navigate to history")
+                            AnalyticsUtil.logEvent("navigate_to_history")
                             navController.navigate(Route.Archive)
                         }
                     )

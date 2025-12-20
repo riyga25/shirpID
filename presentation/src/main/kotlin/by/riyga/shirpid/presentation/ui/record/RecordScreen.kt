@@ -117,7 +117,7 @@ fun RecordScreen(
                 actions = {
                     IconButton(
                         onClick = {
-                            AnalyticsUtil.logEvent("share record")
+                            AnalyticsUtil.logEvent("share_record")
                             record?.audioFilePath?.let { audio ->
                                 share(
                                     context = context,
@@ -134,7 +134,7 @@ fun RecordScreen(
                     }
                     IconButton(
                         onClick = {
-                            AnalyticsUtil.logEvent("delete record")
+                            AnalyticsUtil.logEvent("delete_record")
                             viewModel.setEvent(RecordContract.Event.RemoveRecord)
                         }
                     ) {
@@ -161,7 +161,7 @@ fun RecordScreen(
                 ) {
                     Button(
                         onClick = {
-                            AnalyticsUtil.logEvent("navigate to history")
+                            AnalyticsUtil.logEvent("navigate_to_history")
                             navController.popBackStack()
                             navController.navigate(Route.Archive)
                         },
@@ -176,7 +176,7 @@ fun RecordScreen(
                     Spacer(Modifier.size(8.dp))
                     Button(
                         onClick = {
-                            AnalyticsUtil.logEvent("navigate to progress")
+                            AnalyticsUtil.logEvent("navigate_to_progress")
                             navController.popBackStack()
                             navController.navigate(Route.Progress)
                         },
@@ -289,7 +289,7 @@ fun RecordScreen(
                                 .clickable(
                                     role = Role.Button,
                                     onClick = {
-                                        AnalyticsUtil.logEvent("click play/stop button")
+                                        AnalyticsUtil.logEvent("click_play_stop_button")
                                         if (mediaState.isPlaying) {
                                             viewModel.pauseAudio()
                                         } else {

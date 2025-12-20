@@ -76,7 +76,7 @@ fun SettingsScreen(
             LanguagesBlock(
                 currentLanguage = currentLanguage,
                 onChooseLanguage = {
-                    AnalyticsUtil.logEvent("change language")
+                    AnalyticsUtil.logEvent("change_language")
                     viewModel.setLanguage(it)
                     context.updateAppLocale(it.code)
                 }
@@ -88,7 +88,7 @@ fun SettingsScreen(
                     .fillMaxWidth()
                     .background(MaterialTheme.colorScheme.surface)
                     .clickable {
-                        AnalyticsUtil.logEvent("navigate to license")
+                        AnalyticsUtil.logEvent("navigate_to_license")
                         navController.navigate(Route.License)
                     }
                     .padding(16.dp)
