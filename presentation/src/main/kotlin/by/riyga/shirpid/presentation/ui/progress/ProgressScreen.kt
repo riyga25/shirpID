@@ -105,13 +105,16 @@ fun ProgressScreen(
         }
     }
 
-    LaunchedEffect(state.location) {
-        if (state.location != null && isBound) {
+    LaunchedEffect(state.loading, isBound) {
+        if (!state.loading && isBound) {
+            val options = state.options
             service?.startForegroundService(
-                latitude = state.location?.latitude?.toFloat() ?: 0F,
-                longitude = state.location?.longitude?.toFloat() ?: 0F,
+                latitude = options.latitude,
+                longitude = options.longitude,
                 title = serviceTitle,
-                description = serviceDescription
+                description = serviceDescription,
+                confidenceThreshold = options.confidenceThreshold,
+                week = options.week
             )
         }
     }
@@ -187,7 +190,6 @@ private fun Layout(
     onStop: (saveRecord: Boolean) -> Unit
 ) {
     val place = state.geoDateInfo?.getAddress()
-    val location = state.location.toStringLocation()
 
     Scaffold(
         topBar = {
@@ -198,22 +200,13 @@ private fun Layout(
                             Text(
                                 text = place,
                                 style = MaterialTheme.typography.labelMedium,
-                                maxLines = 1,
+                                maxLines = 2,
                                 overflow = TextOverflow.Ellipsis,
                                 modifier = Modifier.padding(end = 16.dp)
                             )
                         }
                         if (state.loading) {
                             CircularProgressIndicator()
-                        } else {
-                            location?.let { loc ->
-                                if (loc.isNotEmpty()) {
-                                    Text(
-                                        text = loc,
-                                        style = MaterialTheme.typography.labelSmall
-                                    )
-                                }
-                            }
                         }
                     }
                 },

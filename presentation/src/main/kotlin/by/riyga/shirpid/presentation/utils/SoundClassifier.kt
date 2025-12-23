@@ -18,14 +18,11 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import org.tensorflow.lite.Interpreter
-import java.io.IOException
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.FloatBuffer
 import java.nio.channels.Channels
-import java.time.LocalDate
 import kotlin.math.abs
-import kotlin.math.cos
 import kotlin.math.exp
 import kotlin.math.sqrt
 
@@ -44,8 +41,6 @@ class SoundClassifier(
 
     private val _isRecording = MutableStateFlow(false)
     val isRecording: StateFlow<Boolean> get() = _isRecording
-
-    private lateinit var labelList: List<String>
 
     private lateinit var interpreter: Interpreter
     private lateinit var metaInterpreter: Interpreter
@@ -220,15 +215,11 @@ class SoundClassifier(
         return interpreter
     }
 
-    fun runMetaInterpreter(latitude: Float, longitude: Float) {
+    fun runMetaInterpreter() {
         try {
-//            val dayOfYear = 160
-            val dayOfYear = LocalDate.now().dayOfYear
-            val weekMeta = cos(Math.toRadians(dayOfYear * 7.5)) + 1.0
-
-            metaInputBuffer.put(0, latitude)
-            metaInputBuffer.put(1, longitude)
-            metaInputBuffer.put(2, weekMeta.toFloat())
+            metaInputBuffer.put(0, options.latitude)
+            metaInputBuffer.put(1, options.longitude)
+            metaInputBuffer.put(2, options.week)
             metaInputBuffer.rewind()
 
             val metaOutputBuffer = FloatBuffer.allocate(metaModelNumClasses)
@@ -326,20 +317,6 @@ class SoundClassifier(
             println("SoundClassifier detected bird ${prediction.index}")
             externalScope.launch { _birdEvents.emit(prediction.index to prediction.value) }
         }
-
-//        val max = probList.withIndex().maxByOrNull { it.value }
-//        max?.let {
-//            val label = labelList[it.index]
-//            val confidence = it.value
-//
-//            if (confidence >= options.confidenceThreshold &&
-//                (label != lastLabel || System.currentTimeMillis() - lastTime > options.antiDebounceMs)
-//            ) {
-//                lastLabel = label
-//                lastTime = System.currentTimeMillis()
-//                externalScope.launch { _birdEvents.emit(label to confidence) }
-//            }
-//        }
     }
 
     private fun warmUpModel() {
@@ -361,7 +338,10 @@ class SoundClassifier(
         val metaProbabilityThreshold1: Float = 0.01f,
         val metaProbabilityThreshold2: Float = 0.008f,
         val metaProbabilityThreshold3: Float = 0.001f,
-        val confidenceThreshold: Float = 0.4f
+        val confidenceThreshold: Float = 0.3f,
+        val latitude: Float = -1F,
+        val longitude: Float = -1F,
+        val week: Float = -1F,
     )
 }
 

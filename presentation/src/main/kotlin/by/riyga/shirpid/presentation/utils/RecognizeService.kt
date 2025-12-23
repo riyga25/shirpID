@@ -17,6 +17,8 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
+import java.time.LocalDate
+import kotlin.math.cos
 
 class RecognizeService: Service() {
 
@@ -60,12 +62,20 @@ class RecognizeService: Service() {
         latitude: Float,
         longitude: Float,
         title: String,
-        description: String
+        description: String,
+        confidenceThreshold: Float,
+        week: Float
     ) {
         scope.launch {
             soundClassifier = SoundClassifier(
                 context = this@RecognizeService,
-                externalScope = scope
+                externalScope = scope,
+                options = SoundClassifier.Options(
+                    confidenceThreshold = confidenceThreshold,
+                    latitude = latitude,
+                    longitude = longitude,
+                    week = week
+                )
             )
 
             createNotificationChannel()
@@ -76,10 +86,7 @@ class RecognizeService: Service() {
             )
             startForeground(1, notification)
 
-            soundClassifier?.runMetaInterpreter(
-                longitude = longitude,
-                latitude = latitude
-            )
+            soundClassifier?.runMetaInterpreter()
             soundClassifier?.start()
 
             soundClassifier?.birdEvents?.collect {

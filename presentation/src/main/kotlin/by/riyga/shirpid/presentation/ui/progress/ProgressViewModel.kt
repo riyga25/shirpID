@@ -14,10 +14,12 @@ import by.riyga.shirpid.data.preferences.AppPreferences
 import by.riyga.shirpid.presentation.models.IdentifiedBird
 import by.riyga.shirpid.data.models.GeoDateInfo
 import by.riyga.shirpid.presentation.utils.BaseViewModel
+import by.riyga.shirpid.presentation.utils.SoundClassifier
 import by.riyga.shirpid.presentation.utils.UiEffect
 import by.riyga.shirpid.presentation.utils.UiEvent
 import by.riyga.shirpid.presentation.utils.UiState
 import by.riyga.shirpid.presentation.utils.getAddress
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -26,6 +28,9 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.time.LocalDate
+import kotlin.math.cos
 
 class ProgressViewModel(
     private val geocoderDataSource: GeocoderDataSource,
@@ -45,8 +50,7 @@ class ProgressViewModel(
     private var detectionSensitivity: Int = 30
 
     init {
-        fetchLocation()
-        fetchSettings()
+        getServiceOptions()
     }
 
     override fun handleEvent(event: ProgressContract.Event) {
@@ -71,31 +75,26 @@ class ProgressViewModel(
     }
 
     private fun addIdentifiedBird(birdIndex: Int, confidence: Float) {
-        if (confidence * 100 > detectionSensitivity) {
-            val currentList = uiState.value.birds.toMutableMap()
+        val currentList = uiState.value.birds.toMutableMap()
+        val existing = currentList[birdIndex]
 
-            val existing = currentList[birdIndex]
+        if (existing == null || confidence > existing.confidence) {
+            currentList[birdIndex] = IdentifiedBird(
+                index = birdIndex,
+                name = labelsRepository.getLabel(birdIndex),
+                confidence = confidence
+            )
 
-            if (existing == null || confidence > existing.confidence) {
-                currentList[birdIndex] = IdentifiedBird(
-                    index = birdIndex,
-                    name = labelsRepository.getLabel(birdIndex),
-                    confidence = confidence
-                )
-
-                setState {
-                    copy(birds = currentList.toMap())
-                }
-
-                if (existing == null) {
-                    setEffect { ProgressContract.Effect.NotifyByHaptic() }
-                }
+            setState {
+                copy(birds = currentList.toMap())
             }
 
-            highlightCurrent(birdIndex)
-        } else {
-            println("ProgressScreen: less than 30% -> $confidence = $birdIndex")
+            if (existing == null) {
+                setEffect { ProgressContract.Effect.NotifyByHaptic() }
+            }
         }
+
+        highlightCurrent(birdIndex)
     }
 
     private fun highlightCurrent(birdIndex: Int) {
@@ -127,8 +126,8 @@ class ProgressViewModel(
                     birds = currentState.birds.values.map {
                         DetectedBird(it.index, it.confidence)
                     }.toList(),
-                    latitude = currentState.location?.latitude,
-                    longitude = currentState.location?.longitude,
+                    latitude = currentState.options.latitude.toDouble(),
+                    longitude = currentState.options.longitude.toDouble(),
                     locationName = currentState.geoDateInfo?.getAddress(),
                     audioFilePath = audioPath
                 )
@@ -149,20 +148,31 @@ class ProgressViewModel(
         }
     }
 
-    private fun fetchSettings() {
-        viewModelScope.launch {
-            detectionSensitivity = appPreferences.detectionSensitivity.first()
-        }
-    }
-
-    private fun fetchLocation() {
+    private fun getServiceOptions() {
         viewModelScope.launch {
             setState { copy(loading = true) }
-            val loc = locationRepository.getCurrentLocation()
-            setState { copy(location = loc, loading = false) }
+            val location = withContext(Dispatchers.IO) {
+                locationRepository.getCurrentLocation()
+            }
+            val detectionSensitivity = appPreferences.detectionSensitivity.first()
 
-            if (loc != null) {
-                getGeocodeLocation(loc)
+            val dayOfYear = LocalDate.now().dayOfYear
+            val week = cos(Math.toRadians(dayOfYear * 7.5)) + 1.0
+
+            setState {
+                copy(
+                    options = SoundClassifier.Options(
+                        confidenceThreshold = detectionSensitivity.toFloat() / 100,
+                        latitude = location?.latitude?.toFloat() ?: -1F,
+                        longitude = location?.longitude?.toFloat() ?: -1F,
+                        week = week.toFloat()
+                    ),
+                    loading = false
+                )
+            }
+
+            if (location != null) {
+                getGeocodeLocation(location)
             }
         }
     }
@@ -208,11 +218,11 @@ class ProgressContract {
     data class State(
         val loading: Boolean = false,
         val geoDateInfo: GeoDateInfo? = null,
-        val location: LocationData? = null,
         val savingRecord: Boolean = false,
         val saveError: String? = null,
         val birds: Map<Int, IdentifiedBird> = emptyMap(),
-        val currentlyHeardBirds: Set<Int> = emptySet()
+        val currentlyHeardBirds: Set<Int> = emptySet(),
+        val options: SoundClassifier.Options = SoundClassifier.Options()
     ) : UiState
 
     sealed class Effect : UiEffect {
