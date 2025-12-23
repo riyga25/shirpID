@@ -284,9 +284,7 @@ fun RecordingControls(
             text = formatTime(timerValue),
             style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
             color = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier
-                .align(Alignment.Center)
-                .padding(end = 12.dp)
+            modifier = Modifier.align(Alignment.Center)
         )
 
         // Кнопка "Сохранить"
