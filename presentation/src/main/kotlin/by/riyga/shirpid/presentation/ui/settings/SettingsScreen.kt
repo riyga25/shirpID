@@ -17,6 +17,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -46,6 +47,7 @@ fun SettingsScreen(
     val navController = LocalNavController.current
     val context = LocalContext.current
     val currentLanguage by viewModel.currentLanguage.collectAsStateWithLifecycle()
+    val detectionSensitivity by viewModel.detectionSensitivity.collectAsStateWithLifecycle()
 
     Scaffold(
         topBar = {
@@ -80,6 +82,11 @@ fun SettingsScreen(
                     viewModel.setLanguage(it)
                     context.updateAppLocale(it.code)
                 }
+            )
+            Spacer(Modifier.size(16.dp))
+            DetectionSensitivityBlock(
+                sensitivity = detectionSensitivity,
+                onSensitivityChange = { viewModel.setDetectionSensitivity(it) }
             )
             Spacer(Modifier.size(16.dp))
             Text(
@@ -145,6 +152,58 @@ fun LanguageItem(
                 imageVector = Icons.Filled.Check,
                 contentDescription = stringResource(id = R.string.selected),
                 tint = MaterialTheme.colorScheme.primary
+            )
+        }
+    }
+}
+
+@Composable
+fun DetectionSensitivityBlock(
+    sensitivity: Int,
+    onSensitivityChange: (Int) -> Unit
+) {
+    Column(
+        Modifier.background(MaterialTheme.colorScheme.surface).padding(vertical = 16.dp)
+    ) {
+        Row(
+            Modifier.padding(bottom = 8.dp).padding(horizontal = 16.dp)
+        ) {
+            Text(
+                text = stringResource(id = R.string.detection_sensitivity),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+            )
+            Text(
+                text = "${sensitivity}%",
+                style = MaterialTheme.typography.bodyLarge,
+                modifier = Modifier.padding(start = 8.dp)
+            )
+        }
+        Text(
+            text = stringResource(id = R.string.detection_sensitivity_description),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(horizontal = 16.dp).padding(top = 4.dp)
+        )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "0%",
+                style = MaterialTheme.typography.bodyLarge
+            )
+            Slider(
+                value = sensitivity.toFloat(),
+                onValueChange = { onSensitivityChange(it.toInt()) },
+                valueRange = 0f..100f,
+                modifier = Modifier.weight(1f).padding(horizontal = 8.dp)
+            )
+            Text(
+                text = "100%",
+                style = MaterialTheme.typography.bodyLarge
             )
         }
     }

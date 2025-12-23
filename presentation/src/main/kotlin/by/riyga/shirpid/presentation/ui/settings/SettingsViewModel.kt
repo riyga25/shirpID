@@ -19,10 +19,23 @@ class SettingsViewModel(
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = null
         )
+        
+    val detectionSensitivity: StateFlow<Int> = appPreferences.detectionSensitivity
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = 30
+        )
 
     fun setLanguage(language: Language) {
         viewModelScope.launch {
             appPreferences.setLanguage(language)
+        }
+    }
+    
+    fun setDetectionSensitivity(sensitivity: Int) {
+        viewModelScope.launch {
+            appPreferences.setDetectionSensitivity(sensitivity)
         }
     }
 }

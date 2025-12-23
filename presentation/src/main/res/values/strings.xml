@@ -69,6 +69,8 @@
     <string name="selected">Selected</string>
     <string name="license">License</string>
     <string name="eavesdrop">We eavesdrop on the birds...</string>
+    <string name="detection_sensitivity">Detection Sensitivity:</string>
+    <string name="detection_sensitivity_description">Sets how confident the app must be when identifying birds. Lower values catch more birds but may include false detections. Higher values only show birds the app is certain about.</string>
 
     <plurals name="birds_count">
         <item quantity="one">%d bird</item>

@@ -10,6 +10,7 @@ import by.riyga.shirpid.data.models.DetectedBird
 import by.riyga.shirpid.data.models.LocationData
 import by.riyga.shirpid.data.models.Record
 import by.riyga.shirpid.data.network.GeocoderDataSource
+import by.riyga.shirpid.data.preferences.AppPreferences
 import by.riyga.shirpid.presentation.models.IdentifiedBird
 import by.riyga.shirpid.data.models.GeoDateInfo
 import by.riyga.shirpid.presentation.utils.BaseViewModel
@@ -22,6 +23,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
@@ -29,7 +31,8 @@ class ProgressViewModel(
     private val geocoderDataSource: GeocoderDataSource,
     private val locationRepository: LocationRepository,
     private val recordRepository: RecordRepository,
-    private val labelsRepository: LabelsRepository
+    private val labelsRepository: LabelsRepository,
+    private val appPreferences: AppPreferences
 ) : BaseViewModel<ProgressContract.State, ProgressContract.Effect, ProgressContract.Event>() {
 
     override fun createInitialState(): ProgressContract.State = ProgressContract.State()
@@ -39,8 +42,11 @@ class ProgressViewModel(
 
     private var timerJob: Job? = null
 
+    private var detectionSensitivity: Int = 30
+
     init {
         fetchLocation()
+        fetchSettings()
     }
 
     override fun handleEvent(event: ProgressContract.Event) {
@@ -65,7 +71,7 @@ class ProgressViewModel(
     }
 
     private fun addIdentifiedBird(birdIndex: Int, confidence: Float) {
-        if (confidence * 100 > 30) {
+        if (confidence * 100 > detectionSensitivity) {
             val currentList = uiState.value.birds.toMutableMap()
 
             val existing = currentList[birdIndex]
@@ -140,6 +146,12 @@ class ProgressViewModel(
                 }
                 Log.e("ProgressViewModel", "Error saving record: ${e.message}")
             }
+        }
+    }
+
+    private fun fetchSettings() {
+        viewModelScope.launch {
+            detectionSensitivity = appPreferences.detectionSensitivity.first()
         }
     }
 

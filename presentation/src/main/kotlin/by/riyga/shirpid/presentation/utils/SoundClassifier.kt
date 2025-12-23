@@ -147,7 +147,6 @@ class SoundClassifier(
     }
 
     private fun initialize() {
-        loadLabels()
         interpreter = setupInterpreter(options.modelPath, ::onInterpreterReady)
         metaInterpreter = setupInterpreter(options.metaModelPath, ::onMetaInterpreterReady)
         warmUpModel()
@@ -176,17 +175,6 @@ class SoundClassifier(
         }
 
         return record
-    }
-
-    private fun loadLabels() {
-        try {
-            val labels =
-                context.assets.open(options.labelsFile).bufferedReader().use { it.readLines() }
-            labelList = labels.map { it.trim().replaceFirstChar { ch -> ch.uppercase() } }
-            Log.i(TAG, "Loaded ${labelList.size} labels from ${options.labelsFile}")
-        } catch (e: IOException) {
-            Log.e(TAG, "Failed to load labels: ${e.message}")
-        }
     }
 
     private fun loadModelFromAssets(fileName: String): ByteBuffer {
@@ -366,7 +354,6 @@ class SoundClassifier(
     }
 
     class Options(
-        val labelsFile: String = "labels_ru.txt",
         val modelPath: String = "BirdNET_GLOBAL_6K_V2.4_Model_FP16.tflite",
         val metaModelPath: String = "BirdNET_GLOBAL_6K_V2.4_MData_Model_V2_FP16.tflite",
         val sampleRate: Int = 48000,

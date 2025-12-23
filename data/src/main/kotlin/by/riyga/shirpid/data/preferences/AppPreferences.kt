@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import by.riyga.shirpid.data.models.Language
@@ -17,11 +18,17 @@ private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(na
 class AppPreferences(private val context: Context) {
     companion object {
         val LANGUAGE_KEY = stringPreferencesKey("language")
+        val DETECTION_SENSITIVITY_KEY = intPreferencesKey("detection_sensitivity")
     }
 
     val language: Flow<Language?> = context.dataStore.data
         .map { preferences ->
             Language.fromCode(preferences[LANGUAGE_KEY])
+        }.distinctUntilChanged()
+
+    val detectionSensitivity: Flow<Int> = context.dataStore.data
+        .map { preferences ->
+            preferences[DETECTION_SENSITIVITY_KEY] ?: 30 // Default value is 30
         }.distinctUntilChanged()
 
     suspend fun setLanguage(languageCode: String) {
@@ -32,5 +39,11 @@ class AppPreferences(private val context: Context) {
     
     suspend fun setLanguage(language: Language) {
         setLanguage(language.code)
+    }
+    
+    suspend fun setDetectionSensitivity(sensitivity: Int) {
+        context.dataStore.edit { preferences ->
+            preferences[DETECTION_SENSITIVITY_KEY] = sensitivity
+        }
     }
 }
