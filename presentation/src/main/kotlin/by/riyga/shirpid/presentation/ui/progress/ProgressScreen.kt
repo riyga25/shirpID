@@ -83,15 +83,6 @@ fun ProgressScreen(
                 val localBinder = binder as RecognizeService.LocalBinder
                 service = localBinder.getService()
                 isBound = true
-
-                if (state.location != null) {
-                    service?.startForegroundService(
-                        latitude = state.location?.latitude?.toFloat() ?: 0F,
-                        longitude = state.location?.longitude?.toFloat() ?: 0F,
-                        title = serviceTitle,
-                        description = serviceDescription
-                    )
-                }
             }
 
             override fun onServiceDisconnected(name: ComponentName) {
@@ -111,6 +102,17 @@ fun ProgressScreen(
                 context.unbindService(connection)
                 isBound = false // Убедимся, что состояние обновлено
             }
+        }
+    }
+
+    LaunchedEffect(state.location) {
+        if (state.location != null && isBound) {
+            service?.startForegroundService(
+                latitude = state.location?.latitude?.toFloat() ?: 0F,
+                longitude = state.location?.longitude?.toFloat() ?: 0F,
+                title = serviceTitle,
+                description = serviceDescription
+            )
         }
     }
 
