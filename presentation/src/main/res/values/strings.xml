@@ -69,8 +69,12 @@
     <string name="selected">Selected</string>
     <string name="license">License</string>
     <string name="eavesdrop">We eavesdrop on the birds...</string>
-    <string name="detection_sensitivity">Detection Sensitivity:</string>
-    <string name="detection_sensitivity_description">Sets how confident the app must be when identifying birds. Lower values catch more birds but may include false detections. Higher values only show birds the app is certain about.</string>
+    <string name="detection_sensitivity">Detection Sensitivity</string>
+    <string name="detection_sensitivity_description">Lower values detect more birds but may include false identifications. Higher values only show confident detections.</string>
+    <string name="week_setting">Time Period Settings</string>
+    <string name="week_setting_description">Choose whether to identify birds based on the current week or include all birds observed in this area throughout the year.</string>
+    <string name="week_for_all_year">For all year</string>
+    <string name="week_current">Current week</string>
 
     <plurals name="birds_count">
         <item quantity="one">%d bird</item>

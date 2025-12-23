@@ -155,17 +155,22 @@ class ProgressViewModel(
                 locationRepository.getCurrentLocation()
             }
             val detectionSensitivity = appPreferences.detectionSensitivity.first()
+            val useCurrentWeek = appPreferences.useCurrentWeek.first()
 
-            val dayOfYear = LocalDate.now().dayOfYear
-            val week = cos(Math.toRadians(dayOfYear * 7.5)) + 1.0
-
+            val week = if (useCurrentWeek) {
+                val dayOfYear = LocalDate.now().dayOfYear
+                (cos(Math.toRadians(dayOfYear * 7.5)) + 1.0).toFloat()
+            } else {
+                -1F
+            }
+            
             setState {
                 copy(
                     options = SoundClassifier.Options(
                         confidenceThreshold = detectionSensitivity.toFloat() / 100,
                         latitude = location?.latitude?.toFloat() ?: -1F,
                         longitude = location?.longitude?.toFloat() ?: -1F,
-                        week = week.toFloat()
+                        week = week
                     ),
                     loading = false
                 )

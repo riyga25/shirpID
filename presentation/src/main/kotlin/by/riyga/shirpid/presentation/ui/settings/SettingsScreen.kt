@@ -1,9 +1,5 @@
 package by.riyga.shirpid.presentation.ui.settings
 
-import android.app.LocaleManager
-import android.content.Context
-import android.os.Build
-import android.os.LocaleList
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -18,6 +14,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -37,7 +34,6 @@ import by.riyga.shirpid.presentation.utils.AnalyticsUtil
 import by.riyga.shirpid.presentation.utils.LocalNavController
 import by.riyga.shirpid.presentation.utils.updateAppLocale
 import org.koin.compose.viewmodel.koinViewModel
-import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -48,6 +44,7 @@ fun SettingsScreen(
     val context = LocalContext.current
     val currentLanguage by viewModel.currentLanguage.collectAsStateWithLifecycle()
     val detectionSensitivity by viewModel.detectionSensitivity.collectAsStateWithLifecycle()
+    val useCurrentWeek by viewModel.useCurrentWeek.collectAsStateWithLifecycle()
 
     Scaffold(
         topBar = {
@@ -87,6 +84,11 @@ fun SettingsScreen(
             DetectionSensitivityBlock(
                 sensitivity = detectionSensitivity,
                 onSensitivityChange = { viewModel.setDetectionSensitivity(it) }
+            )
+            Spacer(Modifier.size(16.dp))
+            WeekSettingBlock(
+                useCurrentWeek = useCurrentWeek,
+                onWeekForAllYearChange = { viewModel.setUseCurrentWeek(it) }
             )
             Spacer(Modifier.size(16.dp))
             Text(
@@ -204,6 +206,47 @@ fun DetectionSensitivityBlock(
             Text(
                 text = "100%",
                 style = MaterialTheme.typography.bodyLarge
+            )
+        }
+    }
+}
+
+@Composable
+fun WeekSettingBlock(
+    useCurrentWeek: Boolean,
+    onWeekForAllYearChange: (Boolean) -> Unit
+) {
+    Column(
+        Modifier.background(MaterialTheme.colorScheme.surface).padding(vertical = 16.dp)
+    ) {
+        Text(
+            text = stringResource(id = R.string.week_setting),
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(bottom = 8.dp).padding(horizontal = 16.dp)
+        )
+        Text(
+            text = stringResource(id = R.string.week_setting_description),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(horizontal = 16.dp).padding(bottom = 12.dp)
+        )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { onWeekForAllYearChange(!useCurrentWeek) }
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = stringResource(id = if (useCurrentWeek) R.string.week_current else R.string.week_for_all_year),
+                style = MaterialTheme.typography.bodyLarge,
+                modifier = Modifier.weight(1f)
+            )
+            Switch(
+                checked = useCurrentWeek,
+                onCheckedChange = onWeekForAllYearChange,
+                modifier = Modifier.padding(start = 16.dp)
             )
         }
     }

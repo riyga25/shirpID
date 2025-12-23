@@ -26,6 +26,13 @@ class SettingsViewModel(
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = 30
         )
+        
+    val useCurrentWeek: StateFlow<Boolean> = appPreferences.useCurrentWeek
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = true
+        )
 
     fun setLanguage(language: Language) {
         viewModelScope.launch {
@@ -36,6 +43,12 @@ class SettingsViewModel(
     fun setDetectionSensitivity(sensitivity: Int) {
         viewModelScope.launch {
             appPreferences.setDetectionSensitivity(sensitivity)
+        }
+    }
+    
+    fun setUseCurrentWeek(value: Boolean) {
+        viewModelScope.launch {
+            appPreferences.setUseCurrentWeek(value)
         }
     }
 }

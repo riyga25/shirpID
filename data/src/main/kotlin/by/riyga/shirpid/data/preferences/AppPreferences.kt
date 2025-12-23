@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
@@ -19,6 +20,7 @@ class AppPreferences(private val context: Context) {
     companion object {
         val LANGUAGE_KEY = stringPreferencesKey("language")
         val DETECTION_SENSITIVITY_KEY = intPreferencesKey("detection_sensitivity")
+        val USE_CURRENT_WEEK = booleanPreferencesKey("use_current_week")
     }
 
     val language: Flow<Language?> = context.dataStore.data
@@ -29,6 +31,11 @@ class AppPreferences(private val context: Context) {
     val detectionSensitivity: Flow<Int> = context.dataStore.data
         .map { preferences ->
             preferences[DETECTION_SENSITIVITY_KEY] ?: 30 // Default value is 30
+        }.distinctUntilChanged()
+
+    val useCurrentWeek: Flow<Boolean> = context.dataStore.data
+        .map { preferences ->
+            preferences[USE_CURRENT_WEEK] ?: true
         }.distinctUntilChanged()
 
     suspend fun setLanguage(languageCode: String) {
@@ -44,6 +51,12 @@ class AppPreferences(private val context: Context) {
     suspend fun setDetectionSensitivity(sensitivity: Int) {
         context.dataStore.edit { preferences ->
             preferences[DETECTION_SENSITIVITY_KEY] = sensitivity
+        }
+    }
+    
+    suspend fun setUseCurrentWeek(value: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[USE_CURRENT_WEEK] = value
         }
     }
 }
