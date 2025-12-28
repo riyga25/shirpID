@@ -226,15 +226,6 @@ class SoundClassifier(
             metaInterpreter.run(metaInputBuffer, metaOutputBuffer)
             metaOutputBuffer.rewind()
             metaOutputBuffer.get(metaPredictionProbs)
-
-            metaPredictionProbs = metaPredictionProbs.map { prob ->
-                when {
-                    prob >= options.metaProbabilityThreshold1 -> 1f
-                    prob >= options.metaProbabilityThreshold2 -> 0.8f
-                    prob >= options.metaProbabilityThreshold3 -> 0.5f
-                    else -> 0f
-                }
-            }.toFloatArray()
         } catch (e: Throwable) {
             Log.e(TAG, "Error run MetaInterpreter: ${e.message}")
         }
@@ -335,9 +326,6 @@ class SoundClassifier(
         val metaModelPath: String = "BirdNET_GLOBAL_6K_V2.4_MData_Model_V2_FP16.tflite",
         val sampleRate: Int = 48000,
         val warmupRuns: Int = 3,
-        val metaProbabilityThreshold1: Float = 0.01f,
-        val metaProbabilityThreshold2: Float = 0.008f,
-        val metaProbabilityThreshold3: Float = 0.001f,
         val confidenceThreshold: Float = 0.3f,
         val latitude: Float = -1F,
         val longitude: Float = -1F,

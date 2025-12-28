@@ -48,6 +48,7 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import by.riyga.shirpid.presentation.R
@@ -321,12 +322,12 @@ fun BirdRow(
                 .fillMaxWidth()
                 .background(backgroundColor)
                 .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
+            verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
                 text = name,
-                fontWeight = if (isHighlighted) FontWeight.SemiBold else FontWeight.Normal
+                fontWeight = if (isHighlighted) FontWeight.SemiBold else FontWeight.Normal,
+                modifier = Modifier.weight(1f)
             )
             Text(
                 text = confidence.toPercentString(),
@@ -347,4 +348,26 @@ private fun formatTime(elapsedMs: Long): String {
     val minutes = totalSeconds / 60
     val seconds = totalSeconds % 60
     return "%02d:%02d".format(minutes, seconds)
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun PreviewItem() {
+    BirdRow(
+        name = "name name name name name name name name name name ",
+        isHighlighted = false,
+        confidence = 0.3555F,
+        showDivider = false
+    )
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun PreviewItem2() {
+    BirdRow(
+        name = "name",
+        isHighlighted = false,
+        confidence = 0.3555F,
+        showDivider = false
+    )
 }

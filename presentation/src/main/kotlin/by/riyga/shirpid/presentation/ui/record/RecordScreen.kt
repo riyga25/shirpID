@@ -31,6 +31,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
@@ -46,6 +47,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import by.riyga.shirpid.presentation.R
+import by.riyga.shirpid.presentation.ui.progress.BirdRow
 import by.riyga.shirpid.presentation.utils.AnalyticsUtil
 import by.riyga.shirpid.presentation.utils.deleteAudio
 import by.riyga.shirpid.presentation.utils.getConfidenceColor
@@ -347,18 +349,17 @@ fun DetectedBirdCard(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp, vertical = 8.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = bird.name.substringAfter("_").takeIf { it != bird.name } ?: bird.name,
+                    text = bird.comName,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
                 if (bird.name.contains("_")) {
                     Text(
-                        text = bird.comName,
+                        text = bird.latName,
                         style = MaterialTheme.typography.bodyMedium,
                         fontStyle = FontStyle.Italic,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -373,13 +374,26 @@ fun DetectedBirdCard(
             ) {
                 Text(
                     text = bird.confidence.toPercentString(),
-                    modifier = Modifier.padding(4.dp),
+                    modifier = Modifier.padding(vertical = 2.dp, horizontal = 4.dp),
                     style = MaterialTheme.typography.labelSmall,
                     fontWeight = FontWeight.Bold
                 )
             }
         }
     }
+}
+
+
+@Preview(showBackground = true)
+@Composable
+private fun PreviewItem2() {
+    DetectedBirdCard(
+        bird = IdentifiedBird(
+            index = 1,
+            name = "Latin name_common name common name common name",
+            confidence = 0.3555F
+        )
+    )
 }
 
 fun share(

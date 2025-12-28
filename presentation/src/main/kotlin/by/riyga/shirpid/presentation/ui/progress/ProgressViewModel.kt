@@ -1,5 +1,6 @@
 package by.riyga.shirpid.presentation.ui.progress
 
+import android.icu.util.Calendar
 import android.util.Log
 import androidx.compose.runtime.Immutable
 import androidx.lifecycle.viewModelScope
@@ -29,8 +30,6 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.time.LocalDate
-import kotlin.math.cos
 
 class ProgressViewModel(
     private val geocoderDataSource: GeocoderDataSource,
@@ -158,8 +157,12 @@ class ProgressViewModel(
             val useCurrentWeek = appPreferences.useCurrentWeek.first()
 
             val week = if (useCurrentWeek) {
-                val dayOfYear = LocalDate.now().dayOfYear
-                (cos(Math.toRadians(dayOfYear * 7.5)) + 1.0).toFloat()
+                val calendar = Calendar.getInstance()
+                val month = calendar.get(Calendar.MONTH)
+                val dayOfMonth = calendar.get(Calendar.DAY_OF_MONTH)
+                val weekInMonth = (dayOfMonth - 1) / 7 + 1
+                val weekNumber48 = month * 4 + weekInMonth
+                weekNumber48.toFloat()
             } else {
                 -1F
             }

@@ -69,7 +69,7 @@
     <string name="selected">Выбрано</string>
     <string name="license">Лицензия</string>
     <string name="eavesdrop">Подслушиваем пичуг...</string>
-    <string name="detection_sensitivity">Чувствительность обнаружения</string>
+    <string name="detection_sensitivity">Чувствительность обнаружения:</string>
     <string name="detection_sensitivity_description">Определяет, насколько уверенно приложение должно определять птиц. Более низкие значения позволяют обнаружить больше птиц, но могут включать ложные срабатывания. Более высокие значения отображают только тех птиц, в отношении которых приложение уверено.</string>
     <string name="week_setting">Настройка временного периода</string>
     <string name="week_setting_description">Выберите, определять птиц на основе текущей недели или учитывать всех птиц, встречающихся в данной местности в течение года.</string>
