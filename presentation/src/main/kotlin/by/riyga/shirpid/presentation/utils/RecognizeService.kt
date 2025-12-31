@@ -49,6 +49,7 @@ class RecognizeService: Service() {
     override fun onDestroy() {
         super.onDestroy()
         soundClassifier?.stop(false)
+        soundClassifier?.releaseModels()
     }
 
     fun stop(saveRecording: Boolean): String? {

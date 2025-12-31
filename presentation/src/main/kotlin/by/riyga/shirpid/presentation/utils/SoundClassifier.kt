@@ -18,10 +18,10 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import org.tensorflow.lite.Interpreter
-import java.nio.ByteBuffer
-import java.nio.ByteOrder
+import java.io.FileInputStream
 import java.nio.FloatBuffer
-import java.nio.channels.Channels
+import java.nio.MappedByteBuffer
+import java.nio.channels.FileChannel
 import kotlin.math.abs
 import kotlin.math.exp
 import kotlin.math.sqrt
@@ -42,8 +42,10 @@ class SoundClassifier(
     private val _isRecording = MutableStateFlow(false)
     val isRecording: StateFlow<Boolean> get() = _isRecording
 
-    private lateinit var interpreter: Interpreter
-    private lateinit var metaInterpreter: Interpreter
+    private var interpreter: Interpreter? = null
+    private var metaInterpreter: Interpreter? = null
+    private var modelBuffer: MappedByteBuffer? = null
+    private var metaModelBuffer: MappedByteBuffer? = null
 
     private lateinit var predictionProbs: FloatArray
     private lateinit var metaPredictionProbs: FloatArray
@@ -76,15 +78,13 @@ class SoundClassifier(
         options.sampleRate * 2
     )
 
-    // Для антидребезга
-//    private var lastLabel: String? = null
-//    private var lastTime = 0L
+    private var isModelsInitialized = false
 
     init {
         try {
-            initialize()
+            initializeModels()
         } catch (e: Exception) {
-            Log.e(TAG, "Initialization failed: ${e.message}")
+            Log.e(TAG, "Model initialization failed: ${e.message}")
         }
     }
 
@@ -129,10 +129,12 @@ class SoundClassifier(
 
                 audioRecord?.release()
                 audioRecord = null
-                _isRecording.value = false
 
                 val filePath = if (saveRecording) wavRecorder?.stopRecording() else null
                 if (!saveRecording) wavRecorder?.cancelRecording()
+                wavRecorder = null
+
+                _isRecording.value = false
                 return filePath
             } catch (e: Exception) {
                 Log.e(TAG, "Error stopping audio record: ${e.message}")
@@ -141,10 +143,44 @@ class SoundClassifier(
         }
     }
 
-    private fun initialize() {
-        interpreter = setupInterpreter(options.modelPath, ::onInterpreterReady)
-        metaInterpreter = setupInterpreter(options.metaModelPath, ::onMetaInterpreterReady)
+    fun releaseModels() {
+        try {
+            interpreter?.close()
+            metaInterpreter?.close()
+        } catch (e: Exception) {
+            Log.e(TAG, "Error closing interpreters: ${e.message}")
+        } finally {
+            interpreter = null
+            metaInterpreter = null
+            modelBuffer?.clear()
+            metaModelBuffer?.clear()
+            modelBuffer = null
+            metaModelBuffer = null
+            isModelsInitialized = false
+            predictionProbs = FloatArray(0)
+            metaPredictionProbs = FloatArray(0)
+            modelInputLength = 0
+            modelNumClasses = 0
+            metaModelNumClasses = 0
+        }
+    }
+
+    private fun initializeModels() {
+        if (isModelsInitialized) return
+
+        modelBuffer = loadModelFromAssets(options.modelPath)
+        metaModelBuffer = loadModelFromAssets(options.metaModelPath)
+
+        interpreter = Interpreter(modelBuffer!!)
+        metaInterpreter = Interpreter(metaModelBuffer!!)
+
+        interpreter?.allocateTensors()
+        metaInterpreter?.allocateTensors()
+
+        setupModelBuffers()
+
         warmUpModel()
+        isModelsInitialized = true
     }
 
     @SuppressLint("MissingPermission")
@@ -172,47 +208,34 @@ class SoundClassifier(
         return record
     }
 
-    private fun loadModelFromAssets(fileName: String): ByteBuffer {
-        val inputStream = context.assets.open(fileName)
-        val fileSize = inputStream.available()
-        return ByteBuffer.allocateDirect(fileSize).order(ByteOrder.nativeOrder()).apply {
-            Channels.newChannel(inputStream).read(this)
-            rewind()
+    private fun loadModelFromAssets(fileName: String): MappedByteBuffer {
+        val fileDescriptor = context.assets.openFd(fileName)
+        val inputStream = FileInputStream(fileDescriptor.fileDescriptor)
+        val fileChannel = inputStream.channel
+        val startOffset = fileDescriptor.startOffset
+        val declaredLength = fileDescriptor.declaredLength
+        return fileChannel.map(FileChannel.MapMode.READ_ONLY, startOffset, declaredLength).apply {
+            fileDescriptor.close()
+            inputStream.close()
         }
     }
 
-    private fun onInterpreterReady(
-        interpreter: Interpreter,
-        inputShape: IntArray,
-        outputShape: IntArray
-    ) {
+    private fun setupModelBuffers() {
+        val inputShape = interpreter!!.getInputTensor(0).shape()
+        val outputShape = interpreter!!.getOutputTensor(0).shape()
+
         modelInputLength = inputShape[1]
         modelNumClasses = outputShape[1]
         predictionProbs = FloatArray(modelNumClasses) { Float.NaN }
-    }
 
-    private fun onMetaInterpreterReady(
-        interpreter: Interpreter,
-        inputShape: IntArray,
-        outputShape: IntArray
-    ) {
-        metaModelNumClasses = outputShape[1]
+        val metaInputShape = metaInterpreter!!.getInputTensor(0).shape()
+        val metaOutputShape = metaInterpreter!!.getOutputTensor(0).shape()
+
+        metaModelNumClasses = metaOutputShape[1]
         metaPredictionProbs = FloatArray(metaModelNumClasses) { 1f }
-        metaInputBuffer = FloatBuffer.allocate(inputShape[1])
-    }
 
-    private fun setupInterpreter(
-        modelPath: String,
-        onReady: (Interpreter, IntArray, IntArray) -> Unit
-    ): Interpreter {
-        val buffer = loadModelFromAssets(modelPath)
-        val interpreter = Interpreter(buffer, Interpreter.Options())
-        onReady(
-            interpreter,
-            interpreter.getInputTensor(0).shape(),
-            interpreter.getOutputTensor(0).shape()
-        )
-        return interpreter
+        val metaInputLength = metaInputShape[1]
+        metaInputBuffer = FloatBuffer.allocate(metaInputLength)
     }
 
     fun runMetaInterpreter() {
@@ -223,7 +246,7 @@ class SoundClassifier(
             metaInputBuffer.rewind()
 
             val metaOutputBuffer = FloatBuffer.allocate(metaModelNumClasses)
-            metaInterpreter.run(metaInputBuffer, metaOutputBuffer)
+            metaInterpreter?.run(metaInputBuffer, metaOutputBuffer)
             metaOutputBuffer.rewind()
             metaOutputBuffer.get(metaPredictionProbs)
         } catch (e: Throwable) {
@@ -248,7 +271,7 @@ class SoundClassifier(
 //                if (!silenceDetector.isSilence()) {
                     val inputBuffer = normalize(circularBuffer, bufferIndex)
                     val outputBuffer = FloatBuffer.allocate(modelNumClasses)
-                    interpreter.run(inputBuffer, outputBuffer)
+                    interpreter?.run(inputBuffer, outputBuffer)
                     processModelOutput(outputBuffer)
                     delay(inferenceInterval)
 //                } else {
@@ -290,20 +313,15 @@ class SoundClassifier(
             metaPredictionProbs[i] / (1 + exp(-value))
         }
 
-        // 1. Сортируем все предсказания по убыванию уверенности
         val sortedPredictions = probList.withIndex()
-            .map { IndexedValue(it.index, it.value) } // Убедимся, что это IndexedValue<Float>
+            .map { IndexedValue(it.index, it.value) }
             .sortedByDescending { it.value }
 
-        // 2. Определяем, сколько топовых результатов мы хотим взять (например, 3)
-        val topN = 3 // Вы можете сделать это настраиваемым через options
-
-        // 3. Берем N лучших предсказаний, которые проходят порог уверенности
+        val topN = 3
         val topPredictions = sortedPredictions
             .take(topN)
             .filter { it.value >= options.confidenceThreshold }
 
-        // 4. Обрабатываем каждое из выбранных предсказаний
         topPredictions.forEach { prediction ->
             println("SoundClassifier detected bird ${prediction.index}")
             externalScope.launch { _birdEvents.emit(prediction.index to prediction.value) }
@@ -317,7 +335,7 @@ class SoundClassifier(
                 rewind()
             }
             val dummyOutput = FloatBuffer.allocate(modelNumClasses)
-            interpreter.run(dummyInput, dummyOutput)
+            interpreter?.run(dummyInput, dummyOutput)
         }
     }
 
