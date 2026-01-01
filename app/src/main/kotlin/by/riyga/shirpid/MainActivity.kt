@@ -22,26 +22,17 @@ class MainActivity : AppCompatActivity() {
         setContent {
             ComposeApp()
         }
+
         initNotifications()
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             window.isNavigationBarContrastEnforced = false
         }
-
     }
 
     override fun onDestroy() {
         super.onDestroy()
         stopService(Intent(this, RecognizeService::class.java))
-    }
-
-    override fun onResume() {
-        super.onResume()
-        keepScreenOn()
-    }
-
-    private fun keepScreenOn() {
-        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
     }
 
     private fun initNotifications() {
