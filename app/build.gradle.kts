@@ -39,6 +39,11 @@ android {
             isShrinkResources = true
             signingConfig = signingConfigs.getByName("signingConfigRelease")
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            addManifestPlaceholders(mapOf("firebaseCollectionsEnabled" to true))
+        }
+        getByName("debug") {
+            isMinifyEnabled = false
+            addManifestPlaceholders(mapOf(Pair("firebaseCollectionsEnabled", false)))
         }
     }
 
