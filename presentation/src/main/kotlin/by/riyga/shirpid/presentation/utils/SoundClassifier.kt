@@ -22,15 +22,15 @@ import java.io.FileInputStream
 import java.nio.FloatBuffer
 import java.nio.MappedByteBuffer
 import java.nio.channels.FileChannel
+import kotlin.collections.take
 import kotlin.math.abs
 import kotlin.math.exp
-import kotlin.math.sqrt
 
 class SoundClassifier(
     private val context: Context,
-    private val options: Options = Options(),
     private val externalScope: CoroutineScope
 ) {
+    private var options: Options = Options()
 
     companion object {
         private const val TAG = "ShirpID"
@@ -51,15 +51,10 @@ class SoundClassifier(
     private lateinit var metaPredictionProbs: FloatArray
     private lateinit var metaInputBuffer: FloatBuffer
 
-    private var modelInputLength = 0
+    var modelInputLength = 0
     private var modelNumClasses = 0
     private var metaModelNumClasses = 0
     private var inferenceInterval = 800L
-
-    private val silenceDetector = SilenceDetector(
-        durationSeconds = 3,
-        sampleRate = options.sampleRate
-    )
 
     private var audioRecord: AudioRecord? = null
     private var wavRecorder: WavRecorder? = null
@@ -78,15 +73,8 @@ class SoundClassifier(
         options.sampleRate * 2
     )
 
-    private var isModelsInitialized = false
-
-    init {
-        try {
-            initializeModels()
-        } catch (e: Exception) {
-            Log.e(TAG, "Model initialization failed: ${e.message}")
-        }
-    }
+    var isModelsInitialized = false
+        private set
 
     fun start() {
         synchronized(audioLock) {
@@ -165,8 +153,12 @@ class SoundClassifier(
         }
     }
 
-    private fun initializeModels() {
+    fun initializeModels(
+        opt: Options = Options()
+    ) {
         if (isModelsInitialized) return
+
+        options = opt
 
         modelBuffer = loadModelFromAssets(options.modelPath)
         metaModelBuffer = loadModelFromAssets(options.metaModelPath)
@@ -180,6 +172,7 @@ class SoundClassifier(
         setupModelBuffers()
 
         warmUpModel()
+        runMetaInterpreter()
         isModelsInitialized = true
     }
 
@@ -254,6 +247,35 @@ class SoundClassifier(
         }
     }
 
+    fun classify(inputBuffer: FloatBuffer): List<IndexedValue<Float>> {
+        Log.d("WAV", "SoundClassifier.classify() called")
+        Log.d("WAV", "Input buffer position: ${inputBuffer.position()}, limit: ${inputBuffer.limit()}, capacity: ${inputBuffer.capacity()}")
+
+        // Ensure the input buffer has the correct size and position
+        inputBuffer.rewind()
+        Log.d("WAV", "Input buffer rewound, position: ${inputBuffer.position()}")
+
+        val outputBuffer = FloatBuffer.allocate(modelNumClasses)
+        Log.d("WAV", "Created output buffer with capacity: ${outputBuffer.capacity()}")
+
+        try {
+            interpreter?.run(inputBuffer, outputBuffer)
+            Log.d("WAV", "Model inference completed successfully")
+        } catch (e: Exception) {
+            Log.e("WAV", "Error during model inference: ${e.message}", e)
+            return emptyList()
+        }
+
+        outputBuffer.rewind()
+        outputBuffer.get(predictionProbs)
+        Log.d("WAV", "Retrieved predictions, first few values: ${predictionProbs.take(5)}")
+
+        val result = processModelOutput(outputBuffer)
+        Log.d("WAV", "processModelOutput returned ${result.size} results")
+
+        return result
+    }
+
     private suspend fun startRecognition() {
         val circularBuffer = ShortArray(modelInputLength)
         var bufferIndex = 0
@@ -266,17 +288,14 @@ class SoundClassifier(
                 bufferIndex =
                     updateCircularBuffer(circularBuffer, recordingBuffer, samples, bufferIndex)
 
-//                silenceDetector.addSamples(recordingBuffer)
-//
-//                if (!silenceDetector.isSilence()) {
-                    val inputBuffer = normalize(circularBuffer, bufferIndex)
-                    val outputBuffer = FloatBuffer.allocate(modelNumClasses)
-                    interpreter?.run(inputBuffer, outputBuffer)
-                    processModelOutput(outputBuffer)
-                    delay(inferenceInterval)
-//                } else {
-//                    delay(200) // быстро проверяем тишину, но не нагружаем CPU
-//                }
+                val inputBuffer = normalize(circularBuffer, bufferIndex)
+                val result = classify(inputBuffer)
+
+                result.forEach { prediction ->
+                    externalScope.launch { _birdEvents.emit(prediction.index to prediction.value) }
+                }
+
+                delay(inferenceInterval)
             }
         }
     }
@@ -305,27 +324,74 @@ class SoundClassifier(
         return fb
     }
 
-    private fun processModelOutput(outputBuffer: FloatBuffer) {
+    private fun processModelOutput(outputBuffer: FloatBuffer): List<IndexedValue<Float>> {
+        Log.d("WAV", "processModelOutput() called")
         outputBuffer.rewind()
         outputBuffer.get(predictionProbs)
 
-        val probList = predictionProbs.mapIndexed { i, value ->
-            metaPredictionProbs[i] / (1 + exp(-value))
+        Log.d("WAV", "predictionProbs size: ${predictionProbs.size}")
+        Log.d("WAV", "First 5 prediction values: ${predictionProbs.take(5)}")
+        Log.d("WAV", "Last 5 prediction values: ${predictionProbs.takeLast(5)}")
+
+        // Apply BirdNET's flat_sigmoid transformation
+        val sensitivity = -1.0f
+        val bias = 1.0f
+        val transformedBias = (bias - 1.0f) * 10.0f
+
+        val sigmoidValues = predictionProbs.map { value ->
+            val clippedValue = (value + transformedBias).coerceIn(-20f, 20f)
+            1.0f / (1.0f + exp(sensitivity * clippedValue))
         }
+
+        Log.d("WAV", "After flat sigmoid - first 5 values: ${sigmoidValues.take(5)}")
+        Log.d("WAV", "After flat sigmoid - last 5 values: ${sigmoidValues.takeLast(5)}")
+
+        // Check if location data is properly set (latitude and longitude should not be default values)
+        val hasValidLocation = options.latitude != -1f && options.longitude != -1f
+
+        Log.d("WAV", "Location data valid: $hasValidLocation, lat: ${options.latitude}, lon: ${options.longitude}")
+
+        // Apply metadata filter (location filter) conditionally
+        val probList = sigmoidValues.mapIndexed { i, sigmoidValue ->
+            if (i < metaPredictionProbs.size) {
+                val locationProb = metaPredictionProbs[i]
+
+                if (hasValidLocation) {
+                    // Apply location filter when location data is valid
+                    sigmoidValue * locationProb
+                } else {
+                    // Don't apply location filter when location data is not set (default -1, -1)
+                    // This allows detection when location is unknown (like with microphone)
+                    sigmoidValue
+                }
+            } else {
+                // If index is out of bounds for metaPredictionProbs
+                sigmoidValue
+            }
+        }
+
+        Log.d("WAV", "After metadata filtering - first 5 values: ${probList.take(5)}")
+        Log.d("WAV", "After metadata filtering - last 5 values: ${probList.takeLast(5)}")
 
         val sortedPredictions = probList.withIndex()
             .map { IndexedValue(it.index, it.value) }
             .sortedByDescending { it.value }
 
+        Log.d("WAV", "After sorting - first 5 values: ${sortedPredictions.take(5).map { it.value }}")
+
         val topN = 3
         val topPredictions = sortedPredictions
             .take(topN)
             .filter { it.value >= options.confidenceThreshold }
+            .also {
+                Log.d("WAV", "After confidence filtering - ${it.size} predictions remain, threshold: ${options.confidenceThreshold}")
+                it.forEachIndexed { index, prediction ->
+                    Log.d("WAV", "Filtered prediction[$index]: index=${prediction.index}, value=${prediction.value}")
+                }
+            }
 
-        topPredictions.forEach { prediction ->
-            println("SoundClassifier detected bird ${prediction.index}")
-            externalScope.launch { _birdEvents.emit(prediction.index to prediction.value) }
-        }
+        Log.d("WAV", "processModelOutput returning ${topPredictions.size} results")
+        return topPredictions
     }
 
     private fun warmUpModel() {
@@ -349,38 +415,4 @@ class SoundClassifier(
         val longitude: Float = -1F,
         val week: Float = -1F,
     )
-}
-
-class SilenceDetector(
-    private val durationSeconds: Int,
-    private val sampleRate: Int,
-    private val threshold: Double = 1e-4
-) {
-    private val maxSamples: Int = durationSeconds * sampleRate
-    private val buffer: FloatBuffer = FloatBuffer.allocate(maxSamples)
-
-    fun addSamples(audioData: ShortArray) {
-        // Конвертируем в float [-1..1]
-        val floatData = FloatArray(audioData.size) { i -> audioData[i] / 32768f }
-        val samplesToWrite = minOf(floatData.size, buffer.remaining())
-        buffer.put(floatData, 0, samplesToWrite)
-    }
-
-    fun isSilence(): Boolean {
-        if (buffer.position() < maxSamples) return false // ещё не накопили
-        buffer.flip()
-        val samples = FloatArray(buffer.remaining())
-        buffer.get(samples)
-        buffer.clear()
-        val rmsValue = rms(samples)
-        return abs(rmsValue) <= threshold
-    }
-
-    private fun rms(samples: FloatArray): Double {
-        var sum = 0.0
-        for (s in samples) {
-            sum += s * s
-        }
-        return sqrt(sum / samples.size)
-    }
 }

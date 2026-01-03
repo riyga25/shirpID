@@ -20,6 +20,7 @@ import by.riyga.shirpid.presentation.ui.settings.LicenseScreen
 import by.riyga.shirpid.presentation.ui.settings.SettingsScreen
 import by.riyga.shirpid.presentation.ui.start.StartScreen
 import by.riyga.shirpid.presentation.theme.AppTheme
+import by.riyga.shirpid.presentation.ui.file.FileScreen
 import by.riyga.shirpid.presentation.utils.AnalyticsUtil
 import by.riyga.shirpid.presentation.utils.LocalNavController
 import by.riyga.shirpid.presentation.utils.updateAppLocale
@@ -86,6 +87,9 @@ sealed interface Route {
 
     @Serializable
     data object License : Route
+
+    @Serializable
+    data object File : Route
 }
 
 @Composable
@@ -122,6 +126,10 @@ fun AppNavHost(
 
         composable<Route.License> {
             LicenseScreen()
+        }
+
+        composable<Route.File> {
+            FileScreen()
         }
     }
 }

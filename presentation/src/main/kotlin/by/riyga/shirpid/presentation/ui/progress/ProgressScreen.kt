@@ -307,7 +307,7 @@ fun RecordingControls(
 @Composable
 fun BirdRow(
     name: String,
-    isHighlighted: Boolean,
+    isHighlighted: Boolean = false,
     confidence: Float,
     showDivider: Boolean = true
 ) {

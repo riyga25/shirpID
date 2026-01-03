@@ -47,6 +47,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import by.riyga.shirpid.presentation.R
+import by.riyga.shirpid.presentation.ui.components.Player
 import by.riyga.shirpid.presentation.ui.progress.BirdRow
 import by.riyga.shirpid.presentation.utils.AnalyticsUtil
 import by.riyga.shirpid.presentation.utils.deleteAudio
@@ -243,66 +244,15 @@ fun RecordScreen(
             }
 
             if (record != null) {
-                Box(
-                    Modifier
-                        .padding(top = 16.dp)
-                        .background(
-                            colorScheme.tertiary.copy(alpha = 0.3f), RoundedCornerShape(8.dp)
-                        )
-                        .clip(RoundedCornerShape(8.dp))
-                ) {
-                    if (mediaState.progress > 0) {
-                        val progressValue = if (mediaState.duration != 0L) {
-                            mediaState.progress.toFloat() / mediaState.duration
-                        } else 0f
-
-                        LinearProgressIndicator(
-                            progress = { progressValue },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .align(Alignment.BottomStart),
-                            gapSize = 0.dp,
-                            drawStopIndicator = {}
-                        )
+                Player(
+                    mediaState = mediaState,
+                    onPlay = {
+                        viewModel.playAudio()
+                    },
+                    onPause = {
+                        viewModel.pauseAudio()
                     }
-                    Text(
-                        text = "${formatTime(mediaState.progress)}/${formatTime(mediaState.duration)}",
-                        modifier = Modifier
-                            .padding(8.dp)
-                            .align(Alignment.TopEnd),
-                        fontSize = 12.sp
-                    )
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            if (mediaState.isPlaying) {
-                                Icons.Default.PauseCircle
-                            } else {
-                                Icons.Default.PlayCircle
-                            },
-                            contentDescription = null,
-                            modifier = Modifier
-                                .size(40.dp)
-                                .clip(CircleShape)
-                                .clickable(
-                                    role = Role.Button,
-                                    onClick = {
-                                        AnalyticsUtil.logEvent("click_play_stop_button")
-                                        if (mediaState.isPlaying) {
-                                            viewModel.pauseAudio()
-                                        } else {
-                                            viewModel.playAudio()
-                                        }
-                                    }
-                                ),
-                            tint = colorScheme.tertiary
-                        )
-                    }
-                }
+                )
             }
 
             LazyColumn(
@@ -409,16 +359,4 @@ fun share(
     val shareIntent = Intent.createChooser(sendIntent, chooserText)
     shareIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
     ContextCompat.startActivity(context, shareIntent, null)
-}
-
-private fun formatTime(millis: Long?): String {
-    if (millis == null) return ""
-
-    val timeMin = millis / 60000
-    val timeSec = (millis / 1000) % 60
-
-    val minString = if (timeMin < 10) "0$timeMin" else "$timeMin"
-    val secString = if (timeSec < 10) "0$timeSec" else "$timeSec"
-
-    return "$minString:$secString"
 }

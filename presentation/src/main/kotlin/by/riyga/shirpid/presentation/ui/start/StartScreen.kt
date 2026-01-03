@@ -133,6 +133,34 @@ fun StartScreen(
                 )
             )
         },
+        bottomBar = {
+            if (state.allPermissionsGranted) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp)
+                        .navigationBarsPadding()
+                        .padding(bottom = 8.dp)
+                ) {
+                    Button(
+                        onClick = {
+                            AnalyticsUtil.logEvent("navigate_to_progress")
+                            state.currentLocation?.let {
+                                navController.navigate(Route.Progress)
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.ic_mic),
+                            contentDescription = stringResource(R.string.start_record_desc),
+                            tint = MaterialTheme.colorScheme.onPrimary,
+                            modifier = Modifier.size(36.dp)
+                        )
+                    }
+                }
+            }
+        },
         containerColor = MaterialTheme.colorScheme.surfaceContainer,
         contentColor = MaterialTheme.colorScheme.onSurface
     ) { paddings ->
@@ -183,15 +211,13 @@ fun StartScreen(
                     )
                 } else if (!state.isLoadingLocation) {
                     MainActionButton(
-                        onStart = {
-                            AnalyticsUtil.logEvent("navigate_to_progress")
-                            state.currentLocation?.let {
-                                navController.navigate(Route.Progress)
-                            }
-                        },
                         onShowHistory = {
                             AnalyticsUtil.logEvent("navigate_to_history")
                             navController.navigate(Route.Archive)
+                        },
+                        onShowFile = {
+                            AnalyticsUtil.logEvent("navigate_to_file")
+                            navController.navigate(Route.File)
                         }
                     )
                 }
@@ -276,8 +302,8 @@ private fun PermissionItem(
 
 @Composable
 fun MainActionButton(
-    onStart: () -> Unit,
     onShowHistory: () -> Unit,
+    onShowFile: () -> Unit
 ) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -289,20 +315,18 @@ fun MainActionButton(
             color = MaterialTheme.colorScheme.onBackground
         )
         Spacer(Modifier.size(16.dp))
-        Button(onClick = onStart, modifier = Modifier.fillMaxWidth()) {
-            Icon(
-                painter = painterResource(R.drawable.ic_mic),
-                contentDescription = stringResource(R.string.start_record_desc),
-                tint = MaterialTheme.colorScheme.onPrimary,
-                modifier = Modifier.size(36.dp)
-            )
-        }
-        Spacer(Modifier.size(16.dp))
         OutlinedButton(
             onClick = onShowHistory,
             modifier = Modifier.fillMaxWidth()
         ) {
             Text(stringResource(R.string.show_history))
+        }
+        Spacer(Modifier.size(16.dp))
+        OutlinedButton(
+            onClick = onShowFile,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text(text = stringResource(R.string.open_file))
         }
     }
 }

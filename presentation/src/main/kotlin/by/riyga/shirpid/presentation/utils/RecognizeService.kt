@@ -20,7 +20,7 @@ import kotlinx.coroutines.launch
 import java.time.LocalDate
 import kotlin.math.cos
 
-class RecognizeService: Service() {
+class RecognizeService : Service() {
 
     companion object {
         const val ACTION_STOP = "STOP_ACTION"
@@ -70,8 +70,10 @@ class RecognizeService: Service() {
         scope.launch {
             soundClassifier = SoundClassifier(
                 context = this@RecognizeService,
-                externalScope = scope,
-                options = SoundClassifier.Options(
+                externalScope = scope
+            )
+            soundClassifier?.initializeModels(
+                SoundClassifier.Options(
                     confidenceThreshold = confidenceThreshold,
                     latitude = latitude,
                     longitude = longitude,
@@ -87,7 +89,7 @@ class RecognizeService: Service() {
             )
             startForeground(1, notification)
 
-            soundClassifier?.runMetaInterpreter()
+//            soundClassifier?.runMetaInterpreter()
             soundClassifier?.start()
 
             soundClassifier?.birdEvents?.collect {

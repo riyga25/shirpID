@@ -11,9 +11,9 @@
     
     <!-- StartScreen Main Action -->
     <string name="start_record_desc">Начать запись</string>
-    <string name="sound_id_title">ShirpID</string>
     <string name="show_history">Архив записей</string>
-    
+    <string name="open_file">Открыть файл</string>
+
     <!-- StartScreen Location Error -->
     <string name="location_error">Ошибка: %s</string>
     <string name="try_again">Повторить</string>
@@ -76,6 +76,9 @@
     <string name="week_for_all_year">Для всего года</string>
     <string name="week_current">Текущая неделя</string>
 
+    <!-- File -->
+    <string name="choose_file">Выбрать WAV файл</string>
+    <string name="file_name">Аудио файл: %s</string>
 
     <plurals name="birds_count">
         <item quantity="one">%d птица</item>

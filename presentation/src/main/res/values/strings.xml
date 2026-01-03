@@ -11,9 +11,9 @@
 
     <!-- StartScreen Main Action -->
     <string name="start_record_desc">Start recording</string>
-    <string name="sound_id_title">ShirpID</string>
     <string name="show_history">Archive of records</string>
-    
+    <string name="open_file">Open file</string>
+
     <!-- StartScreen Location Error -->
     <string name="location_error">Error: %s</string>
     <string name="try_again">Try Again</string>
@@ -75,6 +75,10 @@
     <string name="week_setting_description">Choose whether to identify birds based on the current week or include all birds observed in this area throughout the year.</string>
     <string name="week_for_all_year">For all year</string>
     <string name="week_current">Current week</string>
+
+    <!-- File -->
+    <string name="choose_file">Choose file</string>
+    <string name="file_name">Audio file: %s</string>
 
     <plurals name="birds_count">
         <item quantity="one">%d bird</item>
