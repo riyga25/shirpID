@@ -128,7 +128,8 @@ class ProgressViewModel(
                     latitude = currentState.options.latitude.toDouble(),
                     longitude = currentState.options.longitude.toDouble(),
                     locationName = currentState.geoDateInfo?.getAddress(),
-                    audioFilePath = audioPath
+                    audioFilePath = audioPath,
+                    chunkDuration = 1000
                 )
 
                 val id = recordRepository.insertRecord(record)

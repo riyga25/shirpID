@@ -13,5 +13,6 @@ data class Record(
     val latitude: Double? = null,
     val longitude: Double? = null,
     val locationName: String? = null,
-    val audioFilePath: String
+    val audioFilePath: String,
+    val chunkDuration: Int
 )

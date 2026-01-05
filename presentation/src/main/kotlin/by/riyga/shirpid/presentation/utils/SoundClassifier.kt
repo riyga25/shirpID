@@ -54,7 +54,7 @@ class SoundClassifier(
     var modelInputLength = 0
     private var modelNumClasses = 0
     private var metaModelNumClasses = 0
-    private var inferenceInterval = 800L
+    private var inferenceInterval = 1000L
 
     private var audioRecord: AudioRecord? = null
     private var wavRecorder: WavRecorder? = null
