@@ -30,6 +30,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import by.riyga.shirpid.presentation.R
 import by.riyga.shirpid.data.models.Language
 import by.riyga.shirpid.presentation.navigation.Route
+import by.riyga.shirpid.presentation.ui.components.BackButton
+import by.riyga.shirpid.presentation.ui.components.BirdTopAppBar
 import by.riyga.shirpid.presentation.utils.AnalyticsUtil
 import by.riyga.shirpid.presentation.utils.LocalNavController
 import by.riyga.shirpid.presentation.utils.updateAppLocale
@@ -48,20 +50,9 @@ fun SettingsScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text(stringResource(id = R.string.settings)) },
-                navigationIcon = {
-                    IconButton(onClick = { navController.navigateUp() }) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(id = R.string.back)
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceContainer,
-                    titleContentColor = MaterialTheme.colorScheme.onSurface
-                )
+            BirdTopAppBar(
+                title = stringResource(id = R.string.settings),
+                onBack = { navController.navigateUp() }
             )
         },
         containerColor = MaterialTheme.colorScheme.surfaceContainer

@@ -26,4 +26,7 @@ sealed interface Route {
 
     @Serializable
     data object File : Route
+
+    @Serializable
+    data object Location : Route
 }

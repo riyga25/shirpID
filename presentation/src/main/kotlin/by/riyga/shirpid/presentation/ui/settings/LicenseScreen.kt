@@ -31,6 +31,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import by.riyga.shirpid.presentation.R
 import androidx.core.net.toUri
+import by.riyga.shirpid.presentation.ui.components.BackButton
+import by.riyga.shirpid.presentation.ui.components.BirdTopAppBar
 import by.riyga.shirpid.presentation.utils.LocalNavController
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -40,13 +42,8 @@ fun LicenseScreen() {
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = {},
-                navigationIcon = {
-                    IconButton(onClick = { navController.navigateUp() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
-                    }
-                },
+            BirdTopAppBar(
+                onBack = { navController.navigateUp() }
             )
         }
     ) { paddingValues ->

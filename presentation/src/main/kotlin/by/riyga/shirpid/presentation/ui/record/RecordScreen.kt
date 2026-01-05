@@ -47,6 +47,8 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import by.riyga.shirpid.presentation.R
+import by.riyga.shirpid.presentation.ui.components.BackButton
+import by.riyga.shirpid.presentation.ui.components.BirdTopAppBar
 import by.riyga.shirpid.presentation.ui.components.Player
 import by.riyga.shirpid.presentation.ui.progress.BirdRow
 import by.riyga.shirpid.presentation.utils.AnalyticsUtil
@@ -105,18 +107,8 @@ fun RecordScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = {},
-                navigationIcon = {
-                    IconButton(
-                        onClick = { onBack() }
-                    ) {
-                        Icon(
-                            Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(by.riyga.shirpid.presentation.R.string.back_to_start)
-                        )
-                    }
-                },
+            BirdTopAppBar(
+                onBack = ::onBack,
                 actions = {
                     IconButton(
                         onClick = {
@@ -146,11 +138,7 @@ fun RecordScreen(
                             contentDescription = stringResource(R.string.delete_all)
                         )
                     }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceContainer,
-                    titleContentColor = MaterialTheme.colorScheme.onSurface
-                )
+                }
             )
         },
         bottomBar = {

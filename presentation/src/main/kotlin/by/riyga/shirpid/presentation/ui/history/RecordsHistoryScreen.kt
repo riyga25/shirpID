@@ -31,6 +31,8 @@ import org.koin.compose.viewmodel.koinViewModel
 import java.text.SimpleDateFormat
 import java.util.*
 import by.riyga.shirpid.presentation.R
+import by.riyga.shirpid.presentation.ui.components.BackButton
+import by.riyga.shirpid.presentation.ui.components.BirdTopAppBar
 import by.riyga.shirpid.presentation.utils.AnalyticsUtil
 import by.riyga.shirpid.presentation.utils.deleteAudio
 import by.riyga.shirpid.presentation.utils.isAudioExists
@@ -59,16 +61,9 @@ fun BirdHistoryScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.archive)) },
-                navigationIcon = {
-                    IconButton(onClick = { navController.navigateUp() }) {
-                        Icon(
-                            Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(R.string.back)
-                        )
-                    }
-                },
+            BirdTopAppBar(
+                title = stringResource(id = R.string.archive),
+                onBack = { navController.navigateUp() },
                 actions = {
                     if (state.totalRecords > 0) {
                         IconButton(
@@ -80,11 +75,7 @@ fun BirdHistoryScreen(
                             )
                         }
                     }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceContainer,
-                    titleContentColor = MaterialTheme.colorScheme.onSurface
-                )
+                }
             )
         },
         containerColor = MaterialTheme.colorScheme.surfaceContainer,
@@ -286,7 +277,13 @@ fun RecordCard(
         )
         Spacer(modifier = Modifier.height(4.dp))
         Text(
-            text = "$timeStr • ${pluralStringResource(R.plurals.birds_count, birdsSize, birdsSize)}",
+            text = "$timeStr • ${
+                pluralStringResource(
+                    R.plurals.birds_count,
+                    birdsSize,
+                    birdsSize
+                )
+            }",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )

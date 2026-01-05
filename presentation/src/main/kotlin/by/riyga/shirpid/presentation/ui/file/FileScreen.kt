@@ -41,6 +41,8 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import by.riyga.shirpid.presentation.R
 import by.riyga.shirpid.presentation.player.PlayerState
+import by.riyga.shirpid.presentation.ui.components.BackButton
+import by.riyga.shirpid.presentation.ui.components.BirdTopAppBar
 import by.riyga.shirpid.presentation.ui.components.Player
 import by.riyga.shirpid.presentation.ui.record.DetectedBirdCard
 import by.riyga.shirpid.presentation.utils.LocalNavController
@@ -92,24 +94,9 @@ private fun FileLayout(
 ) {
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = {
-                    Text(text = stringResource(R.string.open_file))
-                },
-                navigationIcon = {
-                    IconButton(
-                        onClick = onBack
-                    ) {
-                        Icon(
-                            Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(R.string.back_to_start)
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceContainer,
-                    titleContentColor = MaterialTheme.colorScheme.onSurface
-                )
+            BirdTopAppBar(
+                title = stringResource(id = R.string.open_file),
+                onBack = onBack
             )
         },
         bottomBar = {
