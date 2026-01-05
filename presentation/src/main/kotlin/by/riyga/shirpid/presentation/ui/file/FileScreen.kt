@@ -42,6 +42,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import by.riyga.shirpid.presentation.R
 import by.riyga.shirpid.presentation.player.PlayerState
 import by.riyga.shirpid.presentation.ui.components.BackButton
+import by.riyga.shirpid.presentation.ui.components.BirdScaffold
 import by.riyga.shirpid.presentation.ui.components.BirdTopAppBar
 import by.riyga.shirpid.presentation.ui.components.Player
 import by.riyga.shirpid.presentation.ui.record.DetectedBirdCard
@@ -92,7 +93,7 @@ private fun FileLayout(
     onPause: () -> Unit = {},
     onPlay: () -> Unit = {}
 ) {
-    Scaffold(
+    BirdScaffold(
         topBar = {
             BirdTopAppBar(
                 title = stringResource(id = R.string.open_file),
@@ -112,9 +113,7 @@ private fun FileLayout(
                     }
                 }
             }
-        },
-        containerColor = MaterialTheme.colorScheme.surfaceContainer,
-        contentColor = MaterialTheme.colorScheme.onSurface
+        }
     ) { paddings ->
         Column(
             modifier = Modifier

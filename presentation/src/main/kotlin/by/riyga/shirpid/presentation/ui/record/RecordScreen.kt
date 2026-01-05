@@ -48,6 +48,7 @@ import java.util.Date
 import java.util.Locale
 import by.riyga.shirpid.presentation.R
 import by.riyga.shirpid.presentation.ui.components.BackButton
+import by.riyga.shirpid.presentation.ui.components.BirdScaffold
 import by.riyga.shirpid.presentation.ui.components.BirdTopAppBar
 import by.riyga.shirpid.presentation.ui.components.Player
 import by.riyga.shirpid.presentation.ui.progress.BirdRow
@@ -105,7 +106,7 @@ fun RecordScreen(
 
     BackHandler { onBack() }
 
-    Scaffold(
+    BirdScaffold(
         topBar = {
             BirdTopAppBar(
                 onBack = ::onBack,
@@ -177,9 +178,7 @@ fun RecordScreen(
                     }
                 }
             }
-        },
-        containerColor = MaterialTheme.colorScheme.surfaceContainer,
-        contentColor = MaterialTheme.colorScheme.onSurface
+        }
     ) { paddingValues ->
         Column(
             modifier = Modifier

@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.sp
 import by.riyga.shirpid.presentation.R
 import androidx.core.net.toUri
 import by.riyga.shirpid.presentation.ui.components.BackButton
+import by.riyga.shirpid.presentation.ui.components.BirdScaffold
 import by.riyga.shirpid.presentation.ui.components.BirdTopAppBar
 import by.riyga.shirpid.presentation.utils.LocalNavController
 
@@ -40,7 +41,7 @@ import by.riyga.shirpid.presentation.utils.LocalNavController
 fun LicenseScreen() {
     val navController = LocalNavController.current
 
-    Scaffold(
+    BirdScaffold(
         topBar = {
             BirdTopAppBar(
                 onBack = { navController.navigateUp() }

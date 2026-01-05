@@ -31,6 +31,7 @@ import by.riyga.shirpid.presentation.R
 import by.riyga.shirpid.data.models.Language
 import by.riyga.shirpid.presentation.navigation.Route
 import by.riyga.shirpid.presentation.ui.components.BackButton
+import by.riyga.shirpid.presentation.ui.components.BirdScaffold
 import by.riyga.shirpid.presentation.ui.components.BirdTopAppBar
 import by.riyga.shirpid.presentation.utils.AnalyticsUtil
 import by.riyga.shirpid.presentation.utils.LocalNavController
@@ -48,14 +49,13 @@ fun SettingsScreen(
     val detectionSensitivity by viewModel.detectionSensitivity.collectAsStateWithLifecycle()
     val useCurrentWeek by viewModel.useCurrentWeek.collectAsStateWithLifecycle()
 
-    Scaffold(
+    BirdScaffold(
         topBar = {
             BirdTopAppBar(
                 title = stringResource(id = R.string.settings),
                 onBack = { navController.navigateUp() }
             )
-        },
-        containerColor = MaterialTheme.colorScheme.surfaceContainer
+        }
     ) { paddingValues ->
         Column(
             modifier = Modifier

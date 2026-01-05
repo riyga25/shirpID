@@ -38,6 +38,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import by.riyga.shirpid.presentation.R
 import by.riyga.shirpid.presentation.navigation.Route
+import by.riyga.shirpid.presentation.ui.components.BirdScaffold
 import by.riyga.shirpid.presentation.utils.AnalyticsUtil
 import by.riyga.shirpid.presentation.utils.LocalNavController
 import org.koin.compose.viewmodel.koinViewModel
@@ -103,7 +104,7 @@ fun StartScreen(
         }
     }
 
-    Scaffold(
+    BirdScaffold(
         topBar = {
             TopAppBar(
                 title = {

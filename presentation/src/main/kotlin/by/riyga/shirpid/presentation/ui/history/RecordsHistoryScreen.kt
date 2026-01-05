@@ -32,6 +32,7 @@ import java.text.SimpleDateFormat
 import java.util.*
 import by.riyga.shirpid.presentation.R
 import by.riyga.shirpid.presentation.ui.components.BackButton
+import by.riyga.shirpid.presentation.ui.components.BirdScaffold
 import by.riyga.shirpid.presentation.ui.components.BirdTopAppBar
 import by.riyga.shirpid.presentation.utils.AnalyticsUtil
 import by.riyga.shirpid.presentation.utils.deleteAudio
@@ -59,7 +60,7 @@ fun BirdHistoryScreen(
         }
     }
 
-    Scaffold(
+    BirdScaffold(
         topBar = {
             BirdTopAppBar(
                 title = stringResource(id = R.string.archive),
@@ -77,9 +78,7 @@ fun BirdHistoryScreen(
                     }
                 }
             )
-        },
-        containerColor = MaterialTheme.colorScheme.surfaceContainer,
-        contentColor = MaterialTheme.colorScheme.onSurface
+        }
     ) { paddingValues ->
         Column(
             modifier = Modifier
