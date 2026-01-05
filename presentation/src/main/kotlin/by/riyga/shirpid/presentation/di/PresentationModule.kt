@@ -6,6 +6,7 @@ import by.riyga.shirpid.presentation.ui.ComposeAppViewModel
 import by.riyga.shirpid.presentation.ui.file.FileViewModel
 import by.riyga.shirpid.presentation.ui.record.RecordViewModel
 import by.riyga.shirpid.presentation.ui.history.BirdHistoryViewModel
+import by.riyga.shirpid.presentation.ui.location.LocationViewModel
 import by.riyga.shirpid.presentation.ui.progress.ProgressViewModel
 import by.riyga.shirpid.presentation.ui.settings.SettingsViewModel
 import by.riyga.shirpid.presentation.ui.start.StartScreenViewModel
@@ -23,5 +24,6 @@ val presentationModule = module {
     viewModelOf(::SettingsViewModel)
     viewModelOf(::ComposeAppViewModel)
     viewModelOf(::FileViewModel)
+    viewModelOf(::LocationViewModel)
     single { SoundClassifier(androidContext(), get()) }
 }
