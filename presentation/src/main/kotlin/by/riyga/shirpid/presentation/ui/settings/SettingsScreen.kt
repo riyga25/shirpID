@@ -29,7 +29,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import by.riyga.shirpid.presentation.R
 import by.riyga.shirpid.data.models.Language
-import by.riyga.shirpid.presentation.ui.Route
+import by.riyga.shirpid.presentation.navigation.Route
 import by.riyga.shirpid.presentation.utils.AnalyticsUtil
 import by.riyga.shirpid.presentation.utils.LocalNavController
 import by.riyga.shirpid.presentation.utils.updateAppLocale

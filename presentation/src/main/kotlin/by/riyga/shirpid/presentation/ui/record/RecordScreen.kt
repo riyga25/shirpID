@@ -37,7 +37,7 @@ import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import by.riyga.shirpid.presentation.ui.Route
+import by.riyga.shirpid.presentation.navigation.Route
 import org.koin.compose.viewmodel.koinViewModel
 import by.riyga.shirpid.presentation.models.IdentifiedBird
 import by.riyga.shirpid.presentation.player.PlayerState

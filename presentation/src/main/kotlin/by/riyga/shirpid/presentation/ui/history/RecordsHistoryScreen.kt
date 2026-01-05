@@ -25,7 +25,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import by.riyga.shirpid.data.models.Record
-import by.riyga.shirpid.presentation.ui.Route
+import by.riyga.shirpid.presentation.navigation.Route
 import by.riyga.shirpid.presentation.utils.LocalNavController
 import org.koin.compose.viewmodel.koinViewModel
 import java.text.SimpleDateFormat
