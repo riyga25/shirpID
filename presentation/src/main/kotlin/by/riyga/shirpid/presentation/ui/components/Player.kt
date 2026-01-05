@@ -3,6 +3,7 @@ package by.riyga.shirpid.presentation.ui.components
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -21,6 +22,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import by.riyga.shirpid.presentation.player.PlayerState
@@ -29,13 +32,14 @@ import by.riyga.shirpid.presentation.utils.AnalyticsUtil
 
 @Composable
 fun Player(
+    modifier: Modifier = Modifier,
     mediaState: PlayerState,
-    onPause: () -> Unit,
-    onPlay: () -> Unit
+    fileName: String? = null,
+    onPause: () -> Unit = {},
+    onPlay: () -> Unit = {}
 ) {
     Box(
         Modifier
-            .padding(top = 16.dp)
             .background(
                 colorScheme.tertiary.copy(alpha = 0.3f), RoundedCornerShape(8.dp)
             )
@@ -55,17 +59,8 @@ fun Player(
                 drawStopIndicator = {}
             )
         }
-        Text(
-            text = "${formatTime(mediaState.progress)}/${formatTime(mediaState.duration)}",
-            modifier = Modifier
-                .padding(8.dp)
-                .align(Alignment.TopEnd),
-            fontSize = 12.sp
-        )
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(8.dp),
+            modifier = Modifier.fillMaxWidth().padding(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(
@@ -91,8 +86,29 @@ fun Player(
                     ),
                 tint = colorScheme.tertiary
             )
+            Column(
+                modifier = Modifier.padding(start = 8.dp)
+            ) {
+                Text(text = fileName ?: "", maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(
+                    text = "${formatTime(mediaState.progress)}/${formatTime(mediaState.duration)}",
+                    fontSize = 12.sp
+                )
+            }
         }
     }
+}
+
+@Preview
+@Composable
+private fun Preview() {
+    Player(
+        mediaState = PlayerState(
+            progress = 1L,
+            duration = 12345
+        ),
+        fileName = "any name"
+    )
 }
 
 private fun formatTime(millis: Long?): String {

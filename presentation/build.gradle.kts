@@ -44,9 +44,11 @@ dependencies {
     implementation(libs.insert.koin.koinComposeViewmodel)
 
     implementation(libs.kotlinx.serialization.json)
-
     implementation(libs.androidx.media3.exoplayer)
+    implementation(libs.datetime)
 
     implementation(platform(libs.google.firebase.bom))
     implementation(libs.google.firebase.analytics)
+
+    implementation("org.osmdroid:osmdroid-android:6.1.20")
 }

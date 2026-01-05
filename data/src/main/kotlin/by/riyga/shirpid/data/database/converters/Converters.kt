@@ -12,16 +12,12 @@ class Converters {
     }
 
     @TypeConverter
-    fun fromDetectedBirds(list: List<DetectedBird>): String {
-        return json.encodeToString(list)
+    fun fromMap(map: Map<Int, List<DetectedBird>>): String {
+        return json.encodeToString(map)
     }
 
     @TypeConverter
-    fun toDetectedBirds(data: String): List<DetectedBird> {
-        return if (data.isBlank()) {
-            emptyList()
-        } else {
-            json.decodeFromString(data)
-        }
+    fun toMap(jsonString: String): Map<Int, List<DetectedBird>> {
+        return json.decodeFromString(jsonString)
     }
 }

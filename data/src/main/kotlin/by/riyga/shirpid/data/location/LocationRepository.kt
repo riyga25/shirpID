@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
 import androidx.core.content.ContextCompat.checkSelfPermission
+import by.riyga.shirpid.data.models.LatLon
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority.PRIORITY_HIGH_ACCURACY
@@ -52,10 +53,12 @@ class LocationRepositoryImpl(
                 val lastKnownLocation = fusedLocationClient.lastLocation.await()
                 if (lastKnownLocation != null) {
                     return@withContext LocationData(
-                        latitude = lastKnownLocation.latitude,
-                        longitude = lastKnownLocation.longitude,
                         accuracy = lastKnownLocation.accuracy,
-                        timestamp = lastKnownLocation.time
+                        timestamp = lastKnownLocation.time,
+                        location = LatLon(
+                            latitude = lastKnownLocation.latitude,
+                            longitude = lastKnownLocation.longitude
+                        )
                     )
                 }
 
@@ -69,10 +72,12 @@ class LocationRepositoryImpl(
 
                 currentLocation?.let {
                     LocationData(
-                        latitude = it.latitude,
-                        longitude = it.longitude,
                         accuracy = it.accuracy,
-                        timestamp = it.time
+                        timestamp = it.time,
+                        location = LatLon(
+                            latitude = it.latitude,
+                            longitude = it.longitude
+                        )
                     )
                 }
             } catch (e: SecurityException) {

@@ -17,7 +17,12 @@ import by.riyga.shirpid.data.models.LocationData
 import by.riyga.shirpid.data.models.GeoDateInfo
 import kotlinx.coroutines.flow.MutableStateFlow
 import androidx.core.net.toUri
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toJavaLocalDateTime
+import kotlinx.datetime.toLocalDateTime
+import java.time.format.DateTimeFormatter
 import java.util.Locale
+import kotlin.time.Instant
 
 fun GeoDateInfo?.getAddress(): String? {
     return this?.displayName?.takeUntilComma(4)
@@ -25,16 +30,8 @@ fun GeoDateInfo?.getAddress(): String? {
 
 fun LocationData?.toStringLocation(): String? {
     return if (this != null) {
-        "${this.latitude}, ${this.longitude}"
+        "${String.format("%.4f", this.location.latitude)}, ${String.format("%.4f", this.location.longitude)}"
     } else null
-}
-
-// Утилитарная функция для проверки разрешений
-fun isPermissionGranted(context: Context, permission: String): Boolean {
-    return ContextCompat.checkSelfPermission(
-        context,
-        permission
-    ) == PackageManager.PERMISSION_GRANTED
 }
 
 fun <T> MutableStateFlow<T>.setState(reduce: T.() -> T) {
@@ -42,7 +39,9 @@ fun <T> MutableStateFlow<T>.setState(reduce: T.() -> T) {
     this.value = newState
 }
 
-fun Context.isAudioExists(uri: String): Boolean {
+fun Context.isAudioExists(uri: String?): Boolean {
+    if (uri == null) return false
+
     val projection = arrayOf(MediaStore.Audio.Media._ID)
 
     return try {
@@ -132,4 +131,13 @@ private fun String.takeUntilComma(maxCommas: Int): String {
         }
     }
     return this
+}
+
+fun Instant.formatToString(
+    pattern: String,
+    timeZone: TimeZone = TimeZone.currentSystemDefault()
+): String {
+    val dateFormat = DateTimeFormatter.ofPattern(pattern, Locale.getDefault())
+    val ldt = this.toLocalDateTime(timeZone).toJavaLocalDateTime()
+    return dateFormat.format(ldt)
 }

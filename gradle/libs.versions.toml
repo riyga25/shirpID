@@ -7,12 +7,13 @@ jvmToolchain = "21"
 
 # Plugins
 androidGradlePlugin = "8.13.2"
-kotlin = "2.2.21"
-kotlinCompose = "2.2.21"
+kotlin = "2.3.0"
+kotlinCompose = "2.3.0"
 ksp = "2.3.3"
 googleServices = "4.4.4"
 firebaseCrashlytics = "3.0.6"
 firebasePerf = "2.0.2"
+datetime = "0.7.1"
 
 # Core libraries
 coreKtx = "1.17.0"
@@ -57,6 +58,7 @@ splashScreen = { group = "androidx.core", name = "core-splashscreen", version.re
 google-material = { group = "com.google.android.material", name = "material", version.ref = "material" }
 tensorflow-lite = { group = "org.tensorflow", name = "tensorflow-lite", version.ref = "tensorflowLite" }
 squareup-okhttp3 = { group = "com.squareup.okhttp3", name = "okhttp", version.ref = "okhttp" }
+datetime = { group = "org.jetbrains.kotlinx", name = "kotlinx-datetime", version.ref = "datetime" }
 
 # Compose
 androidx-compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }

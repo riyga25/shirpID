@@ -6,14 +6,14 @@ import kotlinx.coroutines.flow.Flow
 
 interface RecordRepository {
     fun getAllRecords(): Flow<List<Record>>
-    suspend fun getRecordByTimestamp(timestamp: Long): Record?
+    suspend fun getRecordById(id: Long): Record?
     suspend fun getRecordCount(): Int
     suspend fun insertRecord(record: Record): Long
     suspend fun insertRecords(records: List<Record>)
     suspend fun updateRecord(record: Record)
     suspend fun deleteRecord(record: Record)
-    suspend fun deleteRecordByTimestamp(timestamp: Long)
-    suspend fun deleteRecordsByTimestamp(timestamps: List<Long>)
+    suspend fun deleteRecordById(id: Long)
+    suspend fun deleteRecordsById(ids: List<Long>)
     suspend fun deleteAllRecords()
 }
 
@@ -24,8 +24,8 @@ class RecordRepositoryImpl(
     override fun getAllRecords(): Flow<List<Record>> =
         recordDao.getAllRecords()
     
-    override suspend fun getRecordByTimestamp(timestamp: Long): Record? =
-        recordDao.getRecordByTimestamp(timestamp)
+    override suspend fun getRecordById(id: Long): Record? =
+        recordDao.getRecordById(id)
     
     override suspend fun getRecordCount(): Int =
         recordDao.getRecordCount()
@@ -42,11 +42,11 @@ class RecordRepositoryImpl(
     override suspend fun deleteRecord(record: Record) =
         recordDao.deleteRecord(record)
     
-    override suspend fun deleteRecordByTimestamp(timestamp: Long) =
-        recordDao.deleteRecordByTimestamp(timestamp)
+    override suspend fun deleteRecordById(id: Long) =
+        recordDao.deleteRecordByTimestamp(id)
 
-    override suspend fun deleteRecordsByTimestamp(timestamps: List<Long>) {
-        recordDao.deleteRecordsByTimestamp(timestamps)
+    override suspend fun deleteRecordsById(ids: List<Long>) {
+        recordDao.deleteRecordsByTimestamp(ids)
     }
 
     override suspend fun deleteAllRecords() =

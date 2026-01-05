@@ -12,15 +12,15 @@ import kotlinx.coroutines.launch
 class BirdHistoryViewModel(
     private val recordRepository: RecordRepository
 ) : ViewModel() {
-    
+
     private val _uiState = MutableStateFlow(BirdHistoryState())
     val uiState: StateFlow<BirdHistoryState> = _uiState.asStateFlow()
-    
+
     init {
         loadRecords()
         loadStatistics()
     }
-    
+
     private fun loadRecords() {
         viewModelScope.launch {
             recordRepository.getAllRecords().collect { records ->
@@ -31,20 +31,23 @@ class BirdHistoryViewModel(
             }
         }
     }
-    
+
     private fun loadStatistics() {
         viewModelScope.launch {
             recordRepository.getAllRecords().collect { records ->
-                val uniqueSpeciesCount = records.flatMap { it.birds }.distinct().size
-                
+                val uniqueSpeciesCount = records
+                    .flatMap { it.birds.values }
+                    .flatten()
+                    .distinctBy { it.index }
+
                 _uiState.value = _uiState.value.copy(
                     totalRecords = records.size,
-                    uniqueSpecies = uniqueSpeciesCount
+                    uniqueSpecies = uniqueSpeciesCount.size
                 )
             }
         }
     }
-    
+
     fun deleteAllRecords() {
         viewModelScope.launch {
             recordRepository.deleteAllRecords()
@@ -53,7 +56,7 @@ class BirdHistoryViewModel(
 
     fun removeRecord(ids: List<Long>) {
         viewModelScope.launch {
-            recordRepository.deleteRecordsByTimestamp(ids)
+            recordRepository.deleteRecordsById(ids)
         }
     }
 }

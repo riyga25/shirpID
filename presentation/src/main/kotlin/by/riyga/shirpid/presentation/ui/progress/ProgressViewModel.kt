@@ -1,6 +1,5 @@
 package by.riyga.shirpid.presentation.ui.progress
 
-import android.icu.util.Calendar
 import android.util.Log
 import androidx.compose.runtime.Immutable
 import androidx.lifecycle.viewModelScope
@@ -14,12 +13,14 @@ import by.riyga.shirpid.data.network.GeocoderDataSource
 import by.riyga.shirpid.data.preferences.AppPreferences
 import by.riyga.shirpid.presentation.models.IdentifiedBird
 import by.riyga.shirpid.data.models.GeoDateInfo
+import by.riyga.shirpid.data.models.LatLon
 import by.riyga.shirpid.presentation.utils.BaseViewModel
 import by.riyga.shirpid.presentation.utils.SoundClassifier
 import by.riyga.shirpid.presentation.utils.UiEffect
 import by.riyga.shirpid.presentation.utils.UiEvent
 import by.riyga.shirpid.presentation.utils.UiState
 import by.riyga.shirpid.presentation.utils.getAddress
+import by.riyga.shirpid.presentation.utils.getWeek
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -30,6 +31,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlin.time.Clock
 
 class ProgressViewModel(
     private val geocoderDataSource: GeocoderDataSource,
@@ -45,8 +47,6 @@ class ProgressViewModel(
     val timer: StateFlow<Long> = _timer.asStateFlow()
 
     private var timerJob: Job? = null
-
-    private var detectionSensitivity: Int = 30
 
     init {
         getServiceOptions()
@@ -122,14 +122,15 @@ class ProgressViewModel(
 
             try {
                 val record = Record(
-                    birds = currentState.birds.values.map {
+                    birds = mapOf(0 to currentState.birds.values.map {
                         DetectedBird(it.index, it.confidence)
-                    }.toList(),
+                    }.toList()),
                     latitude = currentState.options.latitude.toDouble(),
                     longitude = currentState.options.longitude.toDouble(),
                     locationName = currentState.geoDateInfo?.getAddress(),
                     audioFilePath = audioPath,
-                    chunkDuration = 1000
+                    chunkDuration = 1000,
+                    timestamp = Clock.System.now().toEpochMilliseconds()
                 )
 
                 val id = recordRepository.insertRecord(record)
@@ -152,22 +153,17 @@ class ProgressViewModel(
         viewModelScope.launch {
             setState { copy(loading = true) }
             val location = withContext(Dispatchers.IO) {
-                locationRepository.getCurrentLocation()
+                locationRepository.getCurrentLocation()?.location
             }
             val detectionSensitivity = appPreferences.detectionSensitivity.first()
             val useCurrentWeek = appPreferences.useCurrentWeek.first()
 
             val week = if (useCurrentWeek) {
-                val calendar = Calendar.getInstance()
-                val month = calendar.get(Calendar.MONTH)
-                val dayOfMonth = calendar.get(Calendar.DAY_OF_MONTH)
-                val weekInMonth = (dayOfMonth - 1) / 7 + 1
-                val weekNumber48 = month * 4 + weekInMonth
-                weekNumber48.toFloat()
+                getWeek(Clock.System.now())
             } else {
                 -1F
             }
-            
+
             setState {
                 copy(
                     options = SoundClassifier.Options(
@@ -186,13 +182,10 @@ class ProgressViewModel(
         }
     }
 
-    private fun getGeocodeLocation(location: LocationData) {
+    private fun getGeocodeLocation(location: LatLon) {
         viewModelScope.launch {
             try {
-                val geoDateInfo = geocoderDataSource.getLocationInfo(
-                    location.latitude,
-                    location.longitude
-                )
+                val geoDateInfo = geocoderDataSource.getGeoCode(location)
                 setState { copy(geoDateInfo = geoDateInfo) }
             } catch (err: Throwable) {
                 Log.e("APP", err.localizedMessage ?: "Unknown error")

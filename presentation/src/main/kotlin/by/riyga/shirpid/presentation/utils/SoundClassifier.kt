@@ -54,10 +54,10 @@ class SoundClassifier(
     var modelInputLength = 0
     private var modelNumClasses = 0
     private var metaModelNumClasses = 0
-    private var inferenceInterval = 1000L
+    private val inferenceInterval = 1000L
 
     private var audioRecord: AudioRecord? = null
-    private var wavRecorder: WavRecorder? = null
+    private var wavManager: WavManager? = null
 
     private var noiseSuppressor: NoiseSuppressor? = null
     private var agc: AutomaticGainControl? = null
@@ -77,6 +77,7 @@ class SoundClassifier(
         private set
 
     fun start() {
+        println("lol start")
         synchronized(audioLock) {
             if (_isRecording.value) return
 
@@ -85,10 +86,10 @@ class SoundClassifier(
                     audioRecord = initializeAudioRecord()
                 }
 
-                wavRecorder = WavRecorder(audioRecord = audioRecord!!, context = context)
+                wavManager = WavManager(context = context)
 
                 audioRecord?.startRecording()
-                wavRecorder?.startRecording()
+                wavManager?.startRecording(audioRecord = audioRecord!!)
 
                 externalScope.launch(Dispatchers.IO) { startRecognition() }
                 _isRecording.value = true
@@ -118,9 +119,9 @@ class SoundClassifier(
                 audioRecord?.release()
                 audioRecord = null
 
-                val filePath = if (saveRecording) wavRecorder?.stopRecording() else null
-                if (!saveRecording) wavRecorder?.cancelRecording()
-                wavRecorder = null
+                val filePath = if (saveRecording) wavManager?.stopRecording() else null
+                if (!saveRecording) wavManager?.cancelRecording()
+                wavManager = null
 
                 _isRecording.value = false
                 return filePath
@@ -279,12 +280,13 @@ class SoundClassifier(
     private suspend fun startRecognition() {
         val circularBuffer = ShortArray(modelInputLength)
         var bufferIndex = 0
+        var chunk = 0
 
         while (externalScope.isActive && _isRecording.value) {
             val recordingBuffer = ShortArray(modelInputLength)
             val samples = audioRecord?.read(recordingBuffer, 0, recordingBuffer.size) ?: 0
             if (samples > 0) {
-                wavRecorder?.writeAudioDataLoop(recordingBuffer, samples)
+                wavManager?.writeAudioDataLoop(recordingBuffer, samples)
                 bufferIndex =
                     updateCircularBuffer(circularBuffer, recordingBuffer, samples, bufferIndex)
 
@@ -295,7 +297,9 @@ class SoundClassifier(
                     externalScope.launch { _birdEvents.emit(prediction.index to prediction.value) }
                 }
 
-                delay(inferenceInterval)
+                println("lol chunk #$chunk")
+                chunk++
+//                delay(inferenceInterval)
             }
         }
     }

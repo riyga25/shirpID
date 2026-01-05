@@ -36,6 +36,7 @@ import by.riyga.shirpid.presentation.navigation.Route
 import by.riyga.shirpid.presentation.ui.components.BirdScaffold
 import by.riyga.shirpid.presentation.utils.AnalyticsUtil
 import by.riyga.shirpid.presentation.utils.LocalNavController
+import by.riyga.shirpid.presentation.utils.toStringLocation
 import org.koin.compose.viewmodel.koinViewModel
 
 // Утилитарная функция для открытия настроек приложения
@@ -105,7 +106,7 @@ fun StartScreen(
                 title = {
                     Icon(
                         painter = painterResource(R.drawable.ic_logo),
-                        contentDescription = stringResource(R.string.settings),
+                        contentDescription = null,
                         modifier = Modifier
                             .size(32.dp)
                             .clip(CircleShape),
@@ -131,13 +132,23 @@ fun StartScreen(
         },
         bottomBar = {
             if (state.allPermissionsGranted) {
-                Box(
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp)
                         .navigationBarsPadding()
                         .padding(bottom = 8.dp)
                 ) {
+                    OutlinedButton(
+                        onClick = {
+                            AnalyticsUtil.logEvent("navigate_to_history")
+                            navController.navigate(Route.Archive)
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(stringResource(R.string.show_history))
+                    }
+                    Spacer(Modifier.size(16.dp))
                     Button(
                         onClick = {
                             AnalyticsUtil.logEvent("navigate_to_progress")
@@ -180,7 +191,7 @@ fun StartScreen(
                     }
                 } else {
                     state.currentLocation?.let {
-                        Text("${it.latitude}, ${it.longitude}", fontSize = 12.sp)
+                        Text(it.toStringLocation() ?: "", fontSize = 12.sp)
                     }
                 }
             }
@@ -206,16 +217,7 @@ fun StartScreen(
                         }
                     )
                 } else if (!state.isLoadingLocation) {
-                    MainActionButton(
-                        onShowHistory = {
-                            AnalyticsUtil.logEvent("navigate_to_history")
-                            navController.navigate(Route.Archive)
-                        },
-                        onShowFile = {
-                            AnalyticsUtil.logEvent("navigate_to_file")
-                            navController.navigate(Route.File)
-                        }
-                    )
+                    MainWithPermissions()
                 }
             }
         }
@@ -297,10 +299,7 @@ private fun PermissionItem(
 }
 
 @Composable
-fun MainActionButton(
-    onShowHistory: () -> Unit,
-    onShowFile: () -> Unit
-) {
+fun MainWithPermissions() {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier.padding(horizontal = 16.dp)
@@ -310,20 +309,6 @@ fun MainActionButton(
             fontSize = 24.sp,
             color = MaterialTheme.colorScheme.onBackground
         )
-        Spacer(Modifier.size(16.dp))
-        OutlinedButton(
-            onClick = onShowHistory,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text(stringResource(R.string.show_history))
-        }
-        Spacer(Modifier.size(16.dp))
-        OutlinedButton(
-            onClick = onShowFile,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text(text = stringResource(R.string.open_file))
-        }
     }
 }
 

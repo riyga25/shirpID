@@ -11,7 +11,7 @@
     
     <!-- StartScreen Main Action -->
     <string name="start_record_desc">Начать запись</string>
-    <string name="show_history">Архив записей</string>
+    <string name="show_history">Мои записи</string>
     <string name="open_file">Открыть файл</string>
 
     <!-- StartScreen Location Error -->

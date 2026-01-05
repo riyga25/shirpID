@@ -11,7 +11,7 @@
 
     <!-- StartScreen Main Action -->
     <string name="start_record_desc">Start recording</string>
-    <string name="show_history">Archive of records</string>
+    <string name="show_history">My records</string>
     <string name="open_file">Open file</string>
 
     <!-- StartScreen Location Error -->

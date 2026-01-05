@@ -11,7 +11,7 @@ import by.riyga.shirpid.data.models.Record
 
 @Database(
     entities = [Record::class],
-    version = 2,
+    version = 4,
     exportSchema = true
 )
 @TypeConverters(Converters::class)
@@ -31,7 +31,7 @@ abstract class AppDatabase : RoomDatabase() {
                         AppDatabase::class.java,
                         "bird_record_database"
                     )
-                    .addMigrations(*DatabaseMigrations.getAll())
+                    .fallbackToDestructiveMigration(true)
                     .build()
 
                 INSTANCE = instance

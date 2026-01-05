@@ -3,22 +3,29 @@ package by.riyga.shirpid.presentation.utils
 import android.content.ContentValues
 import android.content.Context
 import android.media.AudioRecord
+import android.net.Uri
 import android.os.Environment
 import android.provider.MediaStore
 import android.util.Log
+import by.riyga.shirpid.presentation.utils.FileUtils.getFileSize
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
 import java.io.OutputStream
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
+import java.nio.FloatBuffer
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import kotlin.math.abs
 
 private const val APP_NAME = "ShirpID"
-private const val FILE_NAME_FORMAT = "yyyy-MM-dd HH_mm_ss"
+private const val FILE_NAME_FORMAT = "yyyy_MM_dd_HH_mm_ss"
 
-class WavRecorder(
-    private val audioRecord: AudioRecord,
+class WavManager(
     private val context: Context,
     private val sampleRate: Int = 48000,
     private val channels: Int = 1,
@@ -33,7 +40,7 @@ class WavRecorder(
     /**
      * Start recording audio to a temporary file.
      */
-    fun startRecording() {
+    fun startRecording(audioRecord: AudioRecord) {
         synchronized(audioLock) {
             if (isRecording) return
 
@@ -50,11 +57,11 @@ class WavRecorder(
 
                 isRecording = true
                 Log.i(
-                    "WavRecorder",
+                    "WavManager",
                     "Recording started. Temporary file: ${temporaryFile?.absolutePath}"
                 )
             } catch (e: Exception) {
-                Log.e("WavRecorder", "Error starting recording: ${e.message}")
+                Log.e("WavManager", "Error starting recording: ${e.message}")
             }
         }
     }
@@ -75,12 +82,13 @@ class WavRecorder(
                 }
 
                 // Переносим временный файл в постоянное хранилище
-                val filePath = saveTemporaryFileToMediaStore()
+                val filePath = temporaryFile?.let{ saveTemporaryFileToMediaStore(it) }
+                temporaryFile?.delete() // Удаляем временный файл
 
-                Log.i("WavRecorder", "Recording saved successfully.")
+                Log.i("WavManager", "Recording saved successfully.")
                 return filePath
             } catch (e: Exception) {
-                Log.e("WavRecorder", "Error stopping recording: ${e.message}")
+                Log.e("WavManager", "Error stopping recording: ${e.message}")
                 return null
             } finally {
                 cleanup()
@@ -98,9 +106,9 @@ class WavRecorder(
             try {
                 outputStream?.close() // Закрываем поток
                 temporaryFile?.delete() // Удаляем временный файл
-                Log.i("WavRecorder", "Recording canceled and temporary file deleted.")
+                Log.i("WavManager", "Recording canceled and temporary file deleted.")
             } catch (e: Exception) {
-                Log.e("WavRecorder", "Error canceling recording: ${e.message}")
+                Log.e("WavManager", "Error canceling recording: ${e.message}")
             } finally {
                 cleanup()
             }
@@ -113,7 +121,7 @@ class WavRecorder(
     fun writeAudioDataLoop(buffer: ShortArray, bytesRead: Int) {
         synchronized(audioLock) {
             if (!isRecording || outputStream == null) {
-                Log.e("WavRecorder", "OutputStream is not initialized or recording is not started!")
+                Log.e("WavManager", "OutputStream is not initialized or recording is not started!")
                 return
             }
 
@@ -122,7 +130,7 @@ class WavRecorder(
                 outputStream?.write(byteArray)
                 totalAudioDataSize += byteArray.size
             } catch (e: IOException) {
-                Log.e("WavRecorder", "Error writing PCM data: ${e.message}")
+                Log.e("WavManager", "Error writing PCM data: ${e.message}")
             }
         }
     }
@@ -131,23 +139,158 @@ class WavRecorder(
      * Save the temporary file to MediaStore as a WAV file.
      * Returns the file path of the saved file.
      */
-    private fun saveTemporaryFileToMediaStore(): String? {
-        val contentValues = ContentValues().apply {
-            put(MediaStore.Audio.Media.DISPLAY_NAME, "${getCurrentTimestamp()}.wav")
-            put(MediaStore.Audio.Media.MIME_TYPE, "audio/wav")
-            put(MediaStore.Audio.Media.RELATIVE_PATH, Environment.DIRECTORY_MUSIC + "/$APP_NAME")
-        }
+    fun saveTemporaryFileToMediaStore(file: File): String? {
+        val contentValues = getContentValues()
 
         val uri = context.contentResolver.insert(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, contentValues)
         uri?.let {
             context.contentResolver.openOutputStream(it)?.use { output ->
-                temporaryFile?.inputStream()?.copyTo(output)
+                file.inputStream().copyTo(output)
             }
-            // Return the URI as a string
+
+            val finalValues = ContentValues().apply {
+                put(MediaStore.Audio.Media.IS_PENDING, 0)
+            }
+            context.contentResolver.update(uri, finalValues, null, null)
+
             return uri.toString()
         }
-        temporaryFile?.delete() // Удаляем временный файл
         return null
+    }
+
+    fun copyWavToMediaStore(sourceUri: Uri): Uri? {
+        val contentValues = getContentValues()
+
+        val newUri = context.contentResolver.insert(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, contentValues)
+        newUri?.let { destUri ->
+            try {
+                context.contentResolver.openOutputStream(destUri)?.use { outputStream ->
+                    context.contentResolver.openInputStream(sourceUri)?.use { inputStream ->
+                        inputStream.copyTo(outputStream)
+                    }
+                }
+
+                val finalValues = ContentValues().apply {
+                    put(MediaStore.Audio.Media.IS_PENDING, 0)
+                }
+                context.contentResolver.update(destUri, finalValues, null, null)
+
+                return destUri
+            } catch (e: Exception) {
+                // Удалить неудавшийся файл
+                context.contentResolver.delete(destUri, null, null)
+                Log.e("SaveFile", "Copy failed", e)
+            }
+        }
+        return null
+    }
+
+    private fun getContentValues(): ContentValues = ContentValues().apply {
+        put(MediaStore.Audio.Media.DISPLAY_NAME, "${getCurrentTimestamp()}.wav")
+        put(MediaStore.Audio.Media.MIME_TYPE, "audio/wav")
+        put(MediaStore.Audio.Media.RELATIVE_PATH, Environment.DIRECTORY_MUSIC + "/$APP_NAME")
+        put(MediaStore.Audio.Media.IS_PENDING, 1) // Важно для Android 11+
+    }
+
+    private val modelInputLength = 48000 * 3
+
+    suspend fun processFileByChunks(
+        uri: Uri,
+        onUpdateProgress: (percent: Int) -> Unit = {},
+        onFinished: () -> Unit = {},
+        onChunkProcessed: (Int, FloatBuffer) -> Unit
+    ) {
+        withContext(Dispatchers.IO) {
+            context.contentResolver.openInputStream(uri)?.use { inputStream ->
+                // Читаем заголовок и определяем размер файла
+                val header = ByteArray(44)
+                inputStream.read(header)
+                val fileSize = getFileSize(context.contentResolver, uri) // Получаем размер файла
+
+                val sampleRate = ByteBuffer.wrap(header, 24, 4)
+                    .order(ByteOrder.LITTLE_ENDIAN).int
+
+                val seconds = 3.0f
+                val chunkSize = (sampleRate * seconds).toInt()
+                val bytesPerSample = 2
+
+                val pcmReadBuffer = ByteArray(4096 * bytesPerSample)
+                val chunkBuffer = ShortArray(chunkSize)
+
+                var chunkIndex = 0
+                var bufferedSamples = 0
+                var totalBytesRead = 44L
+
+                while (true) {
+                    val bytesRead = inputStream.read(pcmReadBuffer)
+                    if (bytesRead <= 0) break
+
+                    totalBytesRead += bytesRead
+
+                    // Обновляем прогресс каждые 4096 байт
+                    val progressPercent =
+                        ((totalBytesRead * 100) / fileSize).toInt().coerceAtMost(100)
+                    onUpdateProgress(progressPercent)
+
+                    val samplesRead = bytesRead / bytesPerSample
+                    var sampleIndex = 0
+
+                    while (sampleIndex < samplesRead) {
+                        val offset = sampleIndex * bytesPerSample
+                        val lsb = pcmReadBuffer[offset].toInt() and 0xFF
+                        val msb = pcmReadBuffer[offset + 1].toInt() shl 8
+                        val sample = (msb or lsb).toShort()
+
+                        chunkBuffer[bufferedSamples] = sample
+                        bufferedSamples++
+
+                        if (bufferedSamples == chunkSize) {
+                            val result = processChunk(chunkBuffer.copyOf())
+                            onChunkProcessed(chunkIndex, result)
+
+                            bufferedSamples = 0
+                            chunkIndex++
+                        }
+                        sampleIndex++
+                    }
+                }
+
+                // Process remaining samples
+                if (bufferedSamples > 0) {
+                    val paddedChunk = chunkBuffer.copyOf().also { chunk ->
+                        for (i in bufferedSamples until chunkSize) {
+                            chunk[i] = 0
+                        }
+                    }
+                    val result = processChunk(paddedChunk)
+                    onChunkProcessed(chunkIndex, result)
+                }
+
+                onFinished()
+            }
+        }
+    }
+
+    fun processChunk(chunk: ShortArray): FloatBuffer {
+        val processedChunk = if (chunk.size != modelInputLength) {
+            val resizedChunk = ShortArray(modelInputLength) { 0 }
+            val copySize = minOf(chunk.size, modelInputLength)
+            System.arraycopy(chunk, 0, resizedChunk, 0, copySize)
+            resizedChunk
+        } else {
+            chunk
+        }
+
+        val maxAmp = processedChunk.maxOf { abs(it.toInt()) }.coerceAtLeast(1)
+        val fb = FloatBuffer.allocate(modelInputLength)
+
+        for (i in processedChunk.indices) {
+            val normalizedValue = processedChunk[i].toFloat() / maxAmp
+            fb.put(normalizedValue)
+        }
+        fb.rewind()
+
+        return fb
     }
 
     /**

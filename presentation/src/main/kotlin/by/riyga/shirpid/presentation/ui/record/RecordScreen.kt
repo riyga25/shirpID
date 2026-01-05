@@ -1,74 +1,106 @@
 package by.riyga.shirpid.presentation.ui.record
 
-import android.content.Context
-import android.content.Intent
-import android.net.Uri
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import by.riyga.shirpid.data.models.Record
 import by.riyga.shirpid.presentation.navigation.Route
 import org.koin.compose.viewmodel.koinViewModel
 import by.riyga.shirpid.presentation.models.IdentifiedBird
 import by.riyga.shirpid.presentation.player.PlayerState
 import by.riyga.shirpid.presentation.utils.LocalNavController
-import org.koin.core.parameter.parametersOf
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import by.riyga.shirpid.presentation.R
+import by.riyga.shirpid.presentation.ui.components.BirdDatePickerDialog
 import by.riyga.shirpid.presentation.ui.components.BirdScaffold
 import by.riyga.shirpid.presentation.ui.components.BirdTopAppBar
+import by.riyga.shirpid.presentation.ui.components.MapPointPicker
 import by.riyga.shirpid.presentation.ui.components.Player
+import by.riyga.shirpid.presentation.ui.components.RecordSettingsBottomSheet
 import by.riyga.shirpid.presentation.utils.AnalyticsUtil
 import by.riyga.shirpid.presentation.utils.deleteAudio
+import by.riyga.shirpid.presentation.utils.formatSecondsRange
 import by.riyga.shirpid.presentation.utils.getConfidenceColor
 import by.riyga.shirpid.presentation.utils.isAudioExists
+import by.riyga.shirpid.presentation.utils.share
 import by.riyga.shirpid.presentation.utils.toPercentString
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
+import kotlin.time.Clock
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RecordScreen(
-    recordId: Long,
+    recordId: Long?,
+    fileUri: String?,
     fromArchive: Boolean = false
 ) {
     val context = LocalContext.current
     val navController = LocalNavController.current
-    val viewModel: RecordViewModel = koinViewModel {
-        parametersOf(recordId)
-    }
+    val viewModel: RecordViewModel = koinViewModel()
     val state by viewModel.uiState.collectAsState()
     val effect by viewModel.effect.collectAsStateWithLifecycle(null)
     val mediaState by viewModel.mediaState.collectAsState(initial = PlayerState())
+    var showDatePicker by remember { mutableStateOf(false) }
+    var showSettingsBottomSheet by remember { mutableStateOf(false) }
+    var showMap by remember { mutableStateOf(false) }
+    val dayPickerState = rememberDatePickerState(
+        selectableDates = object : SelectableDates {
+            override fun isSelectableDate(utcTimeMillis: Long): Boolean {
+                return utcTimeMillis <= Clock.System.now().toEpochMilliseconds()
+            }
 
-    val record = state.record
+            override fun isSelectableYear(year: Int): Boolean {
+                val yearNow =
+                    Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).year
+                return year <= yearNow
+            }
+        }
+    ).apply {
+        selectedDateMillis = state.record?.timestamp
+    }
 
     fun onBack() {
         if (fromArchive) {
             navController.popBackStack()
         } else {
             navController.popBackStack(Route.Start, false)
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        if (recordId != null) {
+            viewModel.getRecordById(recordId = recordId, context = context)
+        }
+
+        if (fileUri != null) {
+            viewModel.createRecordFromAudioFile(
+                context = context,
+                uri = fileUri.toUri()
+            )
         }
     }
 
@@ -95,37 +127,129 @@ fun RecordScreen(
 
     BackHandler { onBack() }
 
+    Layout(
+        state = state,
+        onBack = ::onBack,
+        onShare = {
+            AnalyticsUtil.logEvent("share_record")
+            state.record?.audioFilePath?.let { audio ->
+                share(
+                    context = context,
+                    subject = audio.toUri(),
+                    chooserText = null
+                )
+            }
+        },
+        onNavigateToArchive = {
+            AnalyticsUtil.logEvent("navigate_to_history")
+            navController.popBackStack()
+            navController.navigate(Route.Archive)
+        },
+        onNavigateToProgress = {
+            AnalyticsUtil.logEvent("navigate_to_progress")
+            navController.popBackStack()
+            navController.navigate(Route.Progress)
+        },
+        mediaState = mediaState,
+        onPlayAudio = {
+            viewModel.playAudio()
+        },
+        onPauseAudio = {
+            viewModel.pauseAudio()
+        },
+        fromArchive = fromArchive,
+        onShowRecordSettings = {
+            showSettingsBottomSheet = true
+        }
+    )
+
+    if (showDatePicker) {
+        BirdDatePickerDialog(
+            state = dayPickerState,
+            onDismiss = { showDatePicker = false },
+            onDatePick = {
+                showDatePicker = false
+                it?.let { viewModel.setDate(it) }
+            }
+        )
+    }
+
+    if (showSettingsBottomSheet) {
+        RecordSettingsBottomSheet(
+            onChooseDefaultLocation = {
+                showSettingsBottomSheet = false
+                viewModel.setDefaultLocation()
+            },
+            onShowMap = {
+                showSettingsBottomSheet = false
+                showMap = true
+            },
+            onDismiss = {
+                showSettingsBottomSheet = false
+            },
+            onRemoveRecord = {
+                AnalyticsUtil.logEvent("delete_record")
+                viewModel.setEvent(RecordContract.Event.RemoveRecord)
+                showSettingsBottomSheet = false
+            },
+            onChangeDate = {
+                showDatePicker = true
+                showSettingsBottomSheet = false
+            }
+        )
+    }
+
+    AnimatedVisibility(
+        visible = showMap,
+        enter = slideInVertically(initialOffsetY = { it }),
+        exit = slideOutVertically(targetOffsetY = { it })
+    ) {
+        MapPointPicker(
+            initLatitude = state.record?.latitude ?: state.currentLocation?.latitude,
+            initLongitude = state.record?.longitude ?: state.currentLocation?.longitude,
+            onSelected = { lat, lon ->
+                showMap = false
+                viewModel.setLocationFromMap(lat, lon)
+            },
+            onDismiss = { showMap = false }
+        )
+    }
+}
+
+@Composable
+private fun Layout(
+    state: RecordContract.State,
+    fromArchive: Boolean = false,
+    mediaState: PlayerState,
+    onShowRecordSettings: () -> Unit,
+    onPlayAudio: () -> Unit,
+    onPauseAudio: () -> Unit,
+    onNavigateToProgress: () -> Unit,
+    onNavigateToArchive: () -> Unit,
+    onShare: () -> Unit,
+    onBack: () -> Unit
+) {
+    val record = state.record
+
     BirdScaffold(
         topBar = {
             BirdTopAppBar(
-                onBack = ::onBack,
+                onBack = onBack,
                 actions = {
                     IconButton(
-                        onClick = {
-                            AnalyticsUtil.logEvent("share_record")
-                            record?.audioFilePath?.let { audio ->
-                                share(
-                                    context = context,
-                                    subject = audio.toUri(),
-                                    chooserText = null
-                                )
-                            }
-                        }
+                        onClick = onShare
                     ) {
                         Icon(
-                            Icons.Default.Share,
+                            painterResource(R.drawable.ic_share),
                             contentDescription = "Share"
                         )
                     }
                     IconButton(
-                        onClick = {
-                            AnalyticsUtil.logEvent("delete_record")
-                            viewModel.setEvent(RecordContract.Event.RemoveRecord)
-                        }
+                        onClick = onShowRecordSettings
                     ) {
                         Icon(
-                            Icons.Default.Delete,
-                            contentDescription = stringResource(R.string.delete_all)
+                            painterResource(R.drawable.ic_more_vert),
+                            contentDescription = "show record settings"
                         )
                     }
                 }
@@ -140,27 +264,19 @@ fun RecordScreen(
                         .fillMaxWidth()
                         .navigationBarsPadding()
                 ) {
-                    Button(
-                        onClick = {
-                            AnalyticsUtil.logEvent("navigate_to_history")
-                            navController.popBackStack()
-                            navController.navigate(Route.Archive)
-                        },
+                    OutlinedButton(
+                        onClick = onNavigateToArchive,
                         modifier = Modifier.weight(1f),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceContainer,
-                            contentColor = MaterialTheme.colorScheme.onSurface
+                            containerColor = MaterialTheme.colorScheme.background,
+                            contentColor = MaterialTheme.colorScheme.onBackground
                         )
                     ) {
                         Text(stringResource(R.string.archive))
                     }
                     Spacer(Modifier.size(8.dp))
                     Button(
-                        onClick = {
-                            AnalyticsUtil.logEvent("navigate_to_progress")
-                            navController.popBackStack()
-                            navController.navigate(Route.Progress)
-                        },
+                        onClick = onNavigateToProgress,
                         modifier = Modifier.weight(1f)
                     ) {
                         Text(stringResource(R.string.new_recording))
@@ -175,59 +291,29 @@ fun RecordScreen(
                 .padding(horizontal = 16.dp)
                 .padding(top = paddingValues.calculateTopPadding())
         ) {
-            if (record?.latitude != null && record.longitude != null) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(
-                            MaterialTheme.colorScheme.surface,
-                            RoundedCornerShape(8.dp)
-                        )
-                        .padding(16.dp)
-                ) {
-                    if (record.locationName != null) {
-                        Text(
-                            text = record.locationName ?: "",
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                        Spacer(modifier = Modifier.height(4.dp))
-                    }
-                    Text(
-                        text = stringResource(
-                            R.string.coordinates,
-                            String.format(
-                                "%.4f",
-                                record.latitude
-                            ),
-                            String.format("%.4f", record.longitude)
-                        ),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = stringResource(
-                            R.string.recorded,
-                            SimpleDateFormat(
-                                "dd MMMM yyyy HH:mm",
-                                Locale.getDefault()
-                            ).format(Date(record.timestamp))
-                        ),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                }
-            }
+            RecordInfo(record)
 
             if (record != null) {
                 Player(
                     mediaState = mediaState,
-                    onPlay = {
-                        viewModel.playAudio()
-                    },
-                    onPause = {
-                        viewModel.pauseAudio()
-                    }
+                    onPlay = onPlayAudio,
+                    onPause = onPauseAudio,
+                    modifier = Modifier.padding(top = 16.dp),
+                    fileName = state.fileName
+                )
+            }
+
+            if (state.classifyProgressPercent != 0) {
+                Spacer(modifier = Modifier.height(32.dp))
+                LinearProgressIndicator(
+                    progress = { state.classifyProgressPercent / 100f },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(8.dp)
+                )
+                Text(
+                    text = "${state.classifyProgressPercent}%",
+                    style = MaterialTheme.typography.bodyMedium
                 )
             }
 
@@ -236,7 +322,7 @@ fun RecordScreen(
                 modifier = Modifier.padding(top = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                if (record?.birds.isNullOrEmpty()) {
+                if (record?.birds.isNullOrEmpty() && record?.latitude != null) {
                     item {
                         Text(
                             text = stringResource(R.string.no_birds_in_recording),
@@ -250,10 +336,85 @@ fun RecordScreen(
                     }
                 }
 
-                items(state.birds) { bird ->
-                    DetectedBirdCard(bird)
+                if (record?.latitude == null) {
+                    item {
+                        Column(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            TextButton(
+                                onClick = onShowRecordSettings
+                            ) {
+                                Text("Необходимо добавить локацию")
+                            }
+                        }
+                    }
+                }
+
+                state.birds.forEach { chunk ->
+                    item {
+                        Column {
+                            Text(
+                                text = formatSecondsRange(chunk.key * 3, (chunk.key + 1) * 3),
+                                modifier = Modifier.fillMaxWidth(),
+                                textAlign = TextAlign.Center
+                            )
+                            chunk.value.forEachIndexed { i, bird ->
+                                if (i != 0) {
+                                    Spacer(Modifier.size(4.dp))
+                                }
+                                DetectedBirdCard(bird)
+                            }
+                        }
+                    }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun RecordInfo(record: Record?) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(
+                MaterialTheme.colorScheme.surface,
+                RoundedCornerShape(8.dp)
+            )
+            .padding(16.dp)
+    ) {
+        if (record?.locationName != null) {
+            Text(
+                text = record.locationName ?: "",
+                style = MaterialTheme.typography.bodyMedium
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+        }
+        if (record?.latitude != null && record.longitude != null) {
+            Text(
+                text = stringResource(
+                    R.string.coordinates,
+                    String.format("%.4f", record.latitude),
+                    String.format("%.4f", record.longitude)
+                ),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+        }
+        if (record?.timestamp != null) {
+            Text(
+                text = stringResource(
+                    R.string.recorded,
+                    SimpleDateFormat(
+                        "dd MMMM yyyy HH:mm",
+                        Locale.getDefault()
+                    ).format(Date(record.timestamp))
+                ),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface
+            )
         }
     }
 }
@@ -320,19 +481,4 @@ private fun PreviewItem2() {
             confidence = 0.3555F
         )
     )
-}
-
-fun share(
-    context: Context,
-    subject: Uri,
-    chooserText: String?
-) {
-    val sendIntent: Intent = Intent().apply {
-        action = Intent.ACTION_SEND
-        putExtra(Intent.EXTRA_STREAM, subject)
-        type = "audio/x-wav"
-    }
-    val shareIntent = Intent.createChooser(sendIntent, chooserText)
-    shareIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-    ContextCompat.startActivity(context, shareIntent, null)
 }

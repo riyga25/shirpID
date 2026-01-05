@@ -89,7 +89,6 @@ class RecognizeService : Service() {
             )
             startForeground(1, notification)
 
-//            soundClassifier?.runMetaInterpreter()
             soundClassifier?.start()
 
             soundClassifier?.birdEvents?.collect {

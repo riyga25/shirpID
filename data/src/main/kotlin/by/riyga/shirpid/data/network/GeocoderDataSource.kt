@@ -2,11 +2,12 @@ package by.riyga.shirpid.data.network
 
 import by.riyga.shirpid.data.models.GeoDateInfo
 import by.riyga.shirpid.data.models.Language
+import by.riyga.shirpid.data.models.LatLon
 import by.riyga.shirpid.data.preferences.AppPreferences
 import kotlinx.coroutines.flow.first
 
 interface GeocoderDataSource {
-    suspend fun getLocationInfo(latitude: Double, longitude: Double): GeoDateInfo
+    suspend fun getGeoCode(location: LatLon): GeoDateInfo
 }
 
 internal class GeocoderDataSourceImpl(
@@ -18,13 +19,13 @@ internal class GeocoderDataSourceImpl(
     private val ke2: String = "8f4dd058bb97d931527924"
     private val ke3: String = "d3ae1b908f"
 
-    override suspend fun getLocationInfo(latitude: Double, longitude: Double): GeoDateInfo {
+    override suspend fun getGeoCode(location: LatLon): GeoDateInfo {
         return try {
             val language = appPreferences.language.first()
             val response = apiService.reverseGeocoding(
                 apiKey = ke1 + ke2 + ke3,
-                latitude = latitude,
-                longitude = longitude,
+                latitude = location.latitude,
+                longitude = location.longitude,
                 language = language?.code ?: Language.DEFAULT.code
             )
             response.toDomain()

@@ -14,8 +14,9 @@ sealed interface Route {
 
     @Serializable
     data class Record(
-        val recordId: Long,
-        val fromArchive: Boolean
+        val recordId: Long? = null,
+        val fromArchive: Boolean = false,
+        val fileUri: String? = null
     ) : Route
 
     @Serializable
@@ -23,10 +24,4 @@ sealed interface Route {
 
     @Serializable
     data object License : Route
-
-    @Serializable
-    data object File : Route
-
-    @Serializable
-    data object Location : Route
 }

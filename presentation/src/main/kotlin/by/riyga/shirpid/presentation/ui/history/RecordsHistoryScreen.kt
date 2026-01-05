@@ -1,6 +1,8 @@
 package by.riyga.shirpid.presentation.ui.history
 
 import android.annotation.SuppressLint
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -9,12 +11,12 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -35,6 +37,7 @@ import by.riyga.shirpid.presentation.ui.components.BirdTopAppBar
 import by.riyga.shirpid.presentation.utils.AnalyticsUtil
 import by.riyga.shirpid.presentation.utils.deleteAudio
 import by.riyga.shirpid.presentation.utils.isAudioExists
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -46,13 +49,22 @@ fun BirdHistoryScreen(
     val state by viewModel.uiState.collectAsState()
     var showDeleteAllDialog by remember { mutableStateOf(false) }
 
+    val filePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri ->
+        uri?.let {
+            navController.navigate(Route.Record(fileUri = uri.toString()))
+        }
+    }
+
     LaunchedEffect(state.records) {
         if (state.records.isNotEmpty()) {
             val notFoundAudioIds = state.records.mapNotNull { record ->
                 val isExist = context.isAudioExists(record.audioFilePath)
-                if (isExist) null else record.timestamp
+                if (isExist) null else record.id
             }
             if (notFoundAudioIds.isNotEmpty()) {
+                println("REMOVE RECORDS: ${notFoundAudioIds.joinToString()}")
                 viewModel.removeRecord(notFoundAudioIds)
             }
         }
@@ -69,13 +81,46 @@ fun BirdHistoryScreen(
                             onClick = { showDeleteAllDialog = true }
                         ) {
                             Icon(
-                                Icons.Default.Delete,
+                                painterResource(R.drawable.ic_delete),
                                 contentDescription = stringResource(R.string.delete_all)
                             )
                         }
                     }
                 }
             )
+        },
+        bottomBar = {
+            Row(
+                modifier = Modifier
+                    .padding(horizontal = 16.dp)
+                    .padding(bottom = 8.dp)
+                    .fillMaxWidth()
+                    .navigationBarsPadding()
+            ) {
+                OutlinedButton(
+                    onClick = {
+                        AnalyticsUtil.logEvent("navigate_to_file")
+                        filePickerLauncher.launch("audio/x-wav")
+                    },
+                    modifier = Modifier.weight(1f),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                        contentColor = MaterialTheme.colorScheme.onSurface
+                    )
+                ) {
+                    Text(stringResource(R.string.open_file))
+                }
+                Spacer(Modifier.size(8.dp))
+                Button(
+                    onClick = {
+                        navController.popBackStack()
+                        navController.navigate(Route.Progress)
+                    },
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text(stringResource(R.string.new_recording))
+                }
+            }
         }
     ) { paddingValues ->
         Column(
@@ -118,7 +163,7 @@ fun BirdHistoryScreen(
                             onClick = {
                                 AnalyticsUtil.logEvent("navigate_to_record")
                                 navController.navigate(
-                                    Route.Record(record.timestamp, true)
+                                    Route.Record(record.id, true)
                                 )
                             }
                         )

@@ -5,9 +5,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.toRoute
-import by.riyga.shirpid.presentation.ui.file.FileScreen
 import by.riyga.shirpid.presentation.ui.history.BirdHistoryScreen
-import by.riyga.shirpid.presentation.ui.location.LocationScreen
 import by.riyga.shirpid.presentation.ui.progress.ProgressScreen
 import by.riyga.shirpid.presentation.ui.record.RecordScreen
 import by.riyga.shirpid.presentation.ui.settings.LicenseScreen
@@ -38,7 +36,8 @@ fun AppNavHost(
             val route = backStackEntry.toRoute<Route.Record>()
             RecordScreen(
                 recordId = route.recordId,
-                fromArchive = route.fromArchive
+                fromArchive = route.fromArchive,
+                fileUri = route.fileUri
             )
         }
 
@@ -48,14 +47,6 @@ fun AppNavHost(
 
         composable<Route.License> {
             LicenseScreen()
-        }
-
-        composable<Route.File> {
-            FileScreen()
-        }
-
-        composable<Route.Location> {
-            LocationScreen()
         }
     }
 }

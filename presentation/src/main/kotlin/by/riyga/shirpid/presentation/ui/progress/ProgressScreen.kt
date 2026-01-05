@@ -56,6 +56,7 @@ import by.riyga.shirpid.presentation.ui.components.BirdScaffold
 import by.riyga.shirpid.presentation.utils.AnalyticsUtil
 import by.riyga.shirpid.presentation.utils.LocalNavController
 import by.riyga.shirpid.presentation.utils.RecognizeService
+import by.riyga.shirpid.presentation.utils.formatProgressTime
 import by.riyga.shirpid.presentation.utils.getAddress
 import by.riyga.shirpid.presentation.utils.getConfidenceColor
 import by.riyga.shirpid.presentation.utils.toPercentString
@@ -280,7 +281,7 @@ fun RecordingControls(
 
         // Таймер
         Text(
-            text = formatTime(timerValue),
+            text = formatProgressTime(timerValue),
             style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
             color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.align(Alignment.Center)
@@ -339,13 +340,6 @@ fun BirdRow(
             HorizontalDivider()
         }
     }
-}
-
-private fun formatTime(elapsedMs: Long): String {
-    val totalSeconds = elapsedMs / 1000
-    val minutes = totalSeconds / 60
-    val seconds = totalSeconds % 60
-    return "%02d:%02d".format(minutes, seconds)
 }
 
 @Preview(showBackground = true)
