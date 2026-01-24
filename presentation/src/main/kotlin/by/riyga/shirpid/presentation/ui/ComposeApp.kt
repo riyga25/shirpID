@@ -12,7 +12,7 @@ import by.riyga.shirpid.presentation.navigation.AppNavHost
 import by.riyga.shirpid.presentation.theme.AppTheme
 import by.riyga.shirpid.presentation.utils.AnalyticsUtil
 import by.riyga.shirpid.presentation.utils.LocalNavController
-import by.riyga.shirpid.presentation.utils.updateAppLocale
+import by.riyga.shirpid.presentation.utils.AndroidUtils
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -26,7 +26,7 @@ fun ComposeApp() {
     LaunchedEffect(effect) {
         when (val effectCast = effect) {
             is AppContract.Effect.LanguageUpdated -> {
-                context.updateAppLocale(effectCast.code)
+                AndroidUtils.updateAppLocale(context, effectCast.code)
             }
 
             else -> {}

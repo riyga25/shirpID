@@ -56,10 +56,10 @@ import by.riyga.shirpid.presentation.ui.components.BirdScaffold
 import by.riyga.shirpid.presentation.utils.AnalyticsUtil
 import by.riyga.shirpid.presentation.utils.LocalNavController
 import by.riyga.shirpid.presentation.utils.RecognizeService
-import by.riyga.shirpid.presentation.utils.formatProgressTime
-import by.riyga.shirpid.presentation.utils.getAddress
-import by.riyga.shirpid.presentation.utils.getConfidenceColor
-import by.riyga.shirpid.presentation.utils.toPercentString
+import by.riyga.shirpid.presentation.utils.DateFormatter
+import by.riyga.shirpid.presentation.utils.LocationUtils
+import by.riyga.shirpid.presentation.utils.ComposeExtensions
+import by.riyga.shirpid.presentation.utils.StringFormatter
 import kotlinx.coroutines.flow.Flow
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -190,7 +190,7 @@ private fun Layout(
     timerFlow: Flow<Long>,
     onStop: (saveRecord: Boolean) -> Unit
 ) {
-    val place = state.geoDateInfo?.getAddress()
+    val place = LocationUtils.getAddress(state.geoDateInfo)
 
     BirdScaffold(
         topBar = {
@@ -281,7 +281,7 @@ fun RecordingControls(
 
         // Таймер
         Text(
-            text = formatProgressTime(timerValue),
+            text = DateFormatter.formatProgressTime(timerValue),
             style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
             color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.align(Alignment.Center)
@@ -329,9 +329,9 @@ fun BirdRow(
                 modifier = Modifier.weight(1f)
             )
             Text(
-                text = confidence.toPercentString(),
+                text = StringFormatter.toPercentString(confidence),
                 modifier = Modifier
-                    .background(confidence.getConfidenceColor(), CircleShape)
+                    .background(ComposeExtensions.getConfidenceColor(confidence), CircleShape)
                     .padding(4.dp),
                 style = MaterialTheme.typography.labelSmall
             )

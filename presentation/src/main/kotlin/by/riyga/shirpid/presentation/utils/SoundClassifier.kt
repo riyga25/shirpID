@@ -1,46 +1,23 @@
 package by.riyga.shirpid.presentation.utils
 
-import android.annotation.SuppressLint
 import android.content.Context
-import android.media.AudioFormat
-import android.media.AudioRecord
-import android.media.MediaRecorder
-import android.media.audiofx.AutomaticGainControl
-import android.media.audiofx.NoiseSuppressor
 import android.util.Log
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharedFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.isActive
-import kotlinx.coroutines.launch
 import org.tensorflow.lite.Interpreter
 import java.io.FileInputStream
 import java.nio.FloatBuffer
 import java.nio.MappedByteBuffer
 import java.nio.channels.FileChannel
 import kotlin.collections.take
-import kotlin.math.abs
 import kotlin.math.exp
 
 class SoundClassifier(
-    private val context: Context,
-    private val externalScope: CoroutineScope
+    private val context: Context
 ) {
     private var options: Options = Options()
 
     companion object {
         private const val TAG = "ShirpID"
     }
-
-    private val _birdEvents = MutableSharedFlow<Pair<Int, Float>>(extraBufferCapacity = 1)
-    val birdEvents: SharedFlow<Pair<Int, Float>> get() = _birdEvents
-
-    private val _isRecording = MutableStateFlow(false)
-    val isRecording: StateFlow<Boolean> get() = _isRecording
 
     private var interpreter: Interpreter? = null
     private var metaInterpreter: Interpreter? = null
@@ -54,83 +31,10 @@ class SoundClassifier(
     var modelInputLength = 0
     private var modelNumClasses = 0
     private var metaModelNumClasses = 0
-    private val inferenceInterval = 1000L
-
-    private var audioRecord: AudioRecord? = null
-    private var wavManager: WavManager? = null
-
-    private var noiseSuppressor: NoiseSuppressor? = null
-    private var agc: AutomaticGainControl? = null
-
-    private val audioLock = Any()
-
-    private val bufferSize = maxOf(
-        AudioRecord.getMinBufferSize(
-            options.sampleRate,
-            AudioFormat.CHANNEL_IN_MONO,
-            AudioFormat.ENCODING_PCM_16BIT
-        ),
-        options.sampleRate * 2
-    )
 
     var isModelsInitialized = false
         private set
 
-    fun start() {
-        println("lol start")
-        synchronized(audioLock) {
-            if (_isRecording.value) return
-
-            try {
-                if (audioRecord == null || audioRecord?.state != AudioRecord.STATE_INITIALIZED) {
-                    audioRecord = initializeAudioRecord()
-                }
-
-                wavManager = WavManager(context = context)
-
-                audioRecord?.startRecording()
-                wavManager?.startRecording(audioRecord = audioRecord!!)
-
-                externalScope.launch(Dispatchers.IO) { startRecognition() }
-                _isRecording.value = true
-            } catch (e: Exception) {
-                Log.e(TAG, "Error starting audio record: ${e.message}")
-            }
-        }
-    }
-
-    fun stop(saveRecording: Boolean = true): String? {
-        synchronized(audioLock) {
-            if (!_isRecording.value) return null
-
-            try {
-                audioRecord?.apply {
-                    if (state == AudioRecord.STATE_INITIALIZED) stop()
-                }
-
-                noiseSuppressor?.enabled = false
-                noiseSuppressor?.release()
-                noiseSuppressor = null
-
-                agc?.enabled = false
-                agc?.release()
-                agc = null
-
-                audioRecord?.release()
-                audioRecord = null
-
-                val filePath = if (saveRecording) wavManager?.stopRecording() else null
-                if (!saveRecording) wavManager?.cancelRecording()
-                wavManager = null
-
-                _isRecording.value = false
-                return filePath
-            } catch (e: Exception) {
-                Log.e(TAG, "Error stopping audio record: ${e.message}")
-                return null
-            }
-        }
-    }
 
     fun releaseModels() {
         try {
@@ -177,30 +81,6 @@ class SoundClassifier(
         isModelsInitialized = true
     }
 
-    @SuppressLint("MissingPermission")
-    private fun initializeAudioRecord(): AudioRecord {
-        val record = AudioRecord(
-            MediaRecorder.AudioSource.UNPROCESSED,
-            options.sampleRate,
-            AudioFormat.CHANNEL_IN_MONO,
-            AudioFormat.ENCODING_PCM_16BIT,
-            bufferSize
-        )
-
-        if (NoiseSuppressor.isAvailable()) {
-            noiseSuppressor = NoiseSuppressor.create(record.audioSessionId)
-            noiseSuppressor?.enabled = true
-            Log.i(TAG, "NoiseSuppressor enabled: ${noiseSuppressor?.enabled}")
-        }
-
-        if (AutomaticGainControl.isAvailable()) {
-            agc = AutomaticGainControl.create(record.audioSessionId)
-            agc?.enabled = true
-            Log.i(TAG, "AutomaticGainControl enabled: ${agc?.enabled}")
-        }
-
-        return record
-    }
 
     private fun loadModelFromAssets(fileName: String): MappedByteBuffer {
         val fileDescriptor = context.assets.openFd(fileName)
@@ -277,56 +157,6 @@ class SoundClassifier(
         return result
     }
 
-    private suspend fun startRecognition() {
-        val circularBuffer = ShortArray(modelInputLength)
-        var bufferIndex = 0
-        var chunk = 0
-
-        while (externalScope.isActive && _isRecording.value) {
-            val recordingBuffer = ShortArray(modelInputLength)
-            val samples = audioRecord?.read(recordingBuffer, 0, recordingBuffer.size) ?: 0
-            if (samples > 0) {
-                wavManager?.writeAudioDataLoop(recordingBuffer, samples)
-                bufferIndex =
-                    updateCircularBuffer(circularBuffer, recordingBuffer, samples, bufferIndex)
-
-                val inputBuffer = normalize(circularBuffer, bufferIndex)
-                val result = classify(inputBuffer)
-
-                result.forEach { prediction ->
-                    externalScope.launch { _birdEvents.emit(prediction.index to prediction.value) }
-                }
-
-                println("lol chunk #$chunk")
-                chunk++
-//                delay(inferenceInterval)
-            }
-        }
-    }
-
-    private fun updateCircularBuffer(
-        buffer: ShortArray,
-        data: ShortArray,
-        count: Int,
-        index: Int
-    ): Int {
-        var currentIndex = index
-        for (i in 0 until count) {
-            buffer[currentIndex] = data[i]
-            currentIndex = (currentIndex + 1) % buffer.size
-        }
-        return currentIndex
-    }
-
-    private fun normalize(buffer: ShortArray, startIndex: Int): FloatBuffer {
-        val fb = FloatBuffer.allocate(modelInputLength)
-        val maxAmp = buffer.maxOf { abs(it.toInt()) }.coerceAtLeast(1)
-        for (i in 0 until modelInputLength) {
-            fb.put(buffer[(i + startIndex) % modelInputLength].toFloat() / maxAmp)
-        }
-        fb.rewind()
-        return fb
-    }
 
     private fun processModelOutput(outputBuffer: FloatBuffer): List<IndexedValue<Float>> {
         Log.d("WAV", "processModelOutput() called")
@@ -412,7 +242,6 @@ class SoundClassifier(
     class Options(
         val modelPath: String = "BirdNET_GLOBAL_6K_V2.4_Model_FP16.tflite",
         val metaModelPath: String = "BirdNET_GLOBAL_6K_V2.4_MData_Model_V2_FP16.tflite",
-        val sampleRate: Int = 48000,
         val warmupRuns: Int = 3,
         val confidenceThreshold: Float = 0.3f,
         val latitude: Float = -1F,

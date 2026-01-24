@@ -10,7 +10,7 @@ import androidx.lifecycle.viewModelScope
 import by.riyga.shirpid.data.location.LocationRepository
 import by.riyga.shirpid.data.location.LocationUnavailableException
 import by.riyga.shirpid.data.models.LocationData
-import by.riyga.shirpid.presentation.utils.isPermissionGranted
+import by.riyga.shirpid.presentation.utils.AndroidUtils
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -36,7 +36,7 @@ class StartScreenViewModel(
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             _uiState.update {
                 it.copy(
-                    isNotificationsGranted = isPermissionGranted(
+                    isNotificationsGranted = AndroidUtils.isPermissionGranted(
                         context,
                         Manifest.permission.POST_NOTIFICATIONS
                     )
@@ -48,13 +48,13 @@ class StartScreenViewModel(
     fun refreshPermissionsState() {
         _uiState.update { currentState ->
             currentState.copy(
-                isAudioGranted = isPermissionGranted(context, Manifest.permission.RECORD_AUDIO),
-                isFineLocationGranted = isPermissionGranted(
+                isAudioGranted = AndroidUtils.isPermissionGranted(context, Manifest.permission.RECORD_AUDIO),
+                isFineLocationGranted = AndroidUtils.isPermissionGranted(
                     context,
                     Manifest.permission.ACCESS_FINE_LOCATION
                 ),
                 isNotificationsGranted = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                    isPermissionGranted(context, Manifest.permission.POST_NOTIFICATIONS)
+                    AndroidUtils.isPermissionGranted(context, Manifest.permission.POST_NOTIFICATIONS)
                 } else {
                     true
                 }

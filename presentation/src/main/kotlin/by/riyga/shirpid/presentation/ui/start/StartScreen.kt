@@ -36,18 +36,10 @@ import by.riyga.shirpid.presentation.navigation.Route
 import by.riyga.shirpid.presentation.ui.components.BirdScaffold
 import by.riyga.shirpid.presentation.utils.AnalyticsUtil
 import by.riyga.shirpid.presentation.utils.LocalNavController
-import by.riyga.shirpid.presentation.utils.toStringLocation
+import by.riyga.shirpid.presentation.utils.LocationUtils
+import by.riyga.shirpid.presentation.utils.AndroidUtils
 import org.koin.compose.viewmodel.koinViewModel
 
-// Утилитарная функция для открытия настроек приложения
-fun openAppSettings(context: Context) {
-    Intent(
-        Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
-        Uri.fromParts("package", context.packageName, null)
-    ).also {
-        context.startActivity(it)
-    }
-}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -82,7 +74,7 @@ fun StartScreen(
                 }
 
                 is StartScreenEvent.OpenAppSettings -> {
-                    openAppSettings(context)
+                    AndroidUtils.openAppSettings(context)
                 }
             }
         }
@@ -191,7 +183,7 @@ fun StartScreen(
                     }
                 } else {
                     state.currentLocation?.let {
-                        Text(it.toStringLocation() ?: "", fontSize = 12.sp)
+                        Text(LocationUtils.toStringLocation(it) ?: "", fontSize = 12.sp)
                     }
                 }
             }

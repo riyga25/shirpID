@@ -37,6 +37,7 @@ class RecognizeService : Service() {
     private val scope = CoroutineScope(Dispatchers.IO + job)
 
     private var soundClassifier: SoundClassifier? = null
+    private var audioRecorder: AudioRecorder? = null
 
     inner class LocalBinder : Binder() {
         fun getService(): RecognizeService {
@@ -48,12 +49,12 @@ class RecognizeService : Service() {
 
     override fun onDestroy() {
         super.onDestroy()
-        soundClassifier?.stop(false)
+        audioRecorder?.stop(false)
         soundClassifier?.releaseModels()
     }
 
     fun stop(saveRecording: Boolean): String? {
-        val audioFilePath = soundClassifier?.stop(saveRecording)
+        val audioFilePath = audioRecorder?.stop(saveRecording)
         stopForeground(STOP_FOREGROUND_REMOVE)
         stopSelf()
         return audioFilePath
@@ -69,8 +70,7 @@ class RecognizeService : Service() {
     ) {
         scope.launch {
             soundClassifier = SoundClassifier(
-                context = this@RecognizeService,
-                externalScope = scope
+                context = this@RecognizeService
             )
             soundClassifier?.initializeModels(
                 SoundClassifier.Options(
@@ -81,6 +81,12 @@ class RecognizeService : Service() {
                 )
             )
 
+            audioRecorder = AudioRecorder(
+                context = this@RecognizeService,
+                externalScope = scope,
+                soundClassifier = soundClassifier!!
+            )
+
             createNotificationChannel()
 
             val notification = createNotification(
@@ -89,9 +95,9 @@ class RecognizeService : Service() {
             )
             startForeground(1, notification)
 
-            soundClassifier?.start()
+            audioRecorder?.start()
 
-            soundClassifier?.birdEvents?.collect {
+            audioRecorder?.birdEvents?.collect {
                 _birdsEvents.emit(it)
             }
         }

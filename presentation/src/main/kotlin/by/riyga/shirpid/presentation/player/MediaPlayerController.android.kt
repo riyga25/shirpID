@@ -6,6 +6,7 @@ import androidx.media3.common.Player
 import androidx.media3.common.Player.STATE_ENDED
 import androidx.media3.common.Player.STATE_READY
 import androidx.media3.exoplayer.ExoPlayer
+import by.riyga.shirpid.presentation.utils.ComposeExtensions
 import by.riyga.shirpid.presentation.utils.setState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers

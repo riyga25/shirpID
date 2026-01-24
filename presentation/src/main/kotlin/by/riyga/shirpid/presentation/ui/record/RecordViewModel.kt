@@ -21,7 +21,7 @@ import by.riyga.shirpid.presentation.utils.UiEffect
 import by.riyga.shirpid.presentation.utils.UiEvent
 import by.riyga.shirpid.presentation.utils.UiState
 import by.riyga.shirpid.presentation.utils.WavManager
-import by.riyga.shirpid.presentation.utils.getWeek
+import by.riyga.shirpid.presentation.utils.LocationUtils
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -217,7 +217,7 @@ class RecordViewModel(
             val options = SoundClassifier.Options(
                 latitude = record.latitude?.toFloat() ?: -1F,
                 longitude = record.longitude?.toFloat() ?: -1F,
-                week = getWeek(Instant.fromEpochMilliseconds(record.timestamp)),
+                week = LocationUtils.getWeek(Instant.fromEpochMilliseconds(record.timestamp)),
                 confidenceThreshold = detectionSensitivity.toFloat() / 100
             )
 

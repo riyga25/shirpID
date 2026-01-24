@@ -35,8 +35,7 @@ import by.riyga.shirpid.presentation.R
 import by.riyga.shirpid.presentation.ui.components.BirdScaffold
 import by.riyga.shirpid.presentation.ui.components.BirdTopAppBar
 import by.riyga.shirpid.presentation.utils.AnalyticsUtil
-import by.riyga.shirpid.presentation.utils.deleteAudio
-import by.riyga.shirpid.presentation.utils.isAudioExists
+import by.riyga.shirpid.presentation.utils.AndroidUtils
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -60,7 +59,7 @@ fun BirdHistoryScreen(
     LaunchedEffect(state.records) {
         if (state.records.isNotEmpty()) {
             val notFoundAudioIds = state.records.mapNotNull { record ->
-                val isExist = context.isAudioExists(record.audioFilePath)
+                val isExist = AndroidUtils.isAudioExists(context, record.audioFilePath)
                 if (isExist) null else record.id
             }
             if (notFoundAudioIds.isNotEmpty()) {
@@ -184,7 +183,7 @@ fun BirdHistoryScreen(
                 TextButton(
                     onClick = {
                         state.records.map { it.audioFilePath }.forEach {
-                            context.deleteAudio(it.toUri())
+                            AndroidUtils.deleteAudio(context, it.toUri())
                         }
                         AnalyticsUtil.logEvent("delete_all_records")
                         viewModel.deleteAllRecords()

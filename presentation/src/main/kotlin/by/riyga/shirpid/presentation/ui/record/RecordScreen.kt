@@ -41,12 +41,10 @@ import by.riyga.shirpid.presentation.ui.components.MapPointPicker
 import by.riyga.shirpid.presentation.ui.components.Player
 import by.riyga.shirpid.presentation.ui.components.RecordSettingsBottomSheet
 import by.riyga.shirpid.presentation.utils.AnalyticsUtil
-import by.riyga.shirpid.presentation.utils.deleteAudio
-import by.riyga.shirpid.presentation.utils.formatSecondsRange
-import by.riyga.shirpid.presentation.utils.getConfidenceColor
-import by.riyga.shirpid.presentation.utils.isAudioExists
-import by.riyga.shirpid.presentation.utils.share
-import by.riyga.shirpid.presentation.utils.toPercentString
+import by.riyga.shirpid.presentation.utils.AndroidUtils
+import by.riyga.shirpid.presentation.utils.DateFormatter
+import by.riyga.shirpid.presentation.utils.ComposeExtensions
+import by.riyga.shirpid.presentation.utils.StringFormatter
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import kotlin.time.Clock
@@ -107,7 +105,7 @@ fun RecordScreen(
     LaunchedEffect(effect) {
         when (val castEffect = effect) {
             is RecordContract.Effect.RecordRemoved -> {
-                context.deleteAudio(castEffect.uri.toUri())
+                AndroidUtils.deleteAudio(context, castEffect.uri.toUri())
                 onBack()
             }
 
@@ -118,7 +116,7 @@ fun RecordScreen(
     // audio exist double check after history list
     LaunchedEffect(state.record) {
         state.record?.let {
-            val isExist = context.isAudioExists(it.audioFilePath)
+            val isExist = AndroidUtils.isAudioExists(context, it.audioFilePath)
             if (!isExist) {
                 viewModel.setEvent(RecordContract.Event.RemoveRecord)
             }
@@ -133,7 +131,7 @@ fun RecordScreen(
         onShare = {
             AnalyticsUtil.logEvent("share_record")
             state.record?.audioFilePath?.let { audio ->
-                share(
+                AndroidUtils.share(
                     context = context,
                     subject = audio.toUri(),
                     chooserText = null
@@ -355,7 +353,7 @@ private fun Layout(
                     item {
                         Column {
                             Text(
-                                text = formatSecondsRange(chunk.key * 3, (chunk.key + 1) * 3),
+                                text = DateFormatter.formatSecondsRange(chunk.key * 3, (chunk.key + 1) * 3),
                                 modifier = Modifier.fillMaxWidth(),
                                 textAlign = TextAlign.Center
                             )
@@ -457,10 +455,10 @@ fun DetectedBirdCard(
             // Confidence badge
             Surface(
                 shape = RoundedCornerShape(12.dp),
-                color = bird.confidence.getConfidenceColor()
+                color = ComposeExtensions.getConfidenceColor(bird.confidence)
             ) {
                 Text(
-                    text = bird.confidence.toPercentString(),
+                    text = StringFormatter.toPercentString(bird.confidence),
                     modifier = Modifier.padding(vertical = 2.dp, horizontal = 4.dp),
                     style = MaterialTheme.typography.labelSmall,
                     fontWeight = FontWeight.Bold

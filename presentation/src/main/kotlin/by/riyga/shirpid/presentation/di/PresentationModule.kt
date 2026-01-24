@@ -22,6 +22,6 @@ val presentationModule = module {
     viewModelOf(::RecordViewModel)
     viewModelOf(::SettingsViewModel)
     viewModelOf(::ComposeAppViewModel)
-    single { SoundClassifier(androidContext(), get()) }
+    single { SoundClassifier(androidContext()) }
     single { WavManager(androidContext()) }
 }

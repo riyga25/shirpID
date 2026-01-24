@@ -29,7 +29,7 @@ import by.riyga.shirpid.presentation.ui.components.BirdScaffold
 import by.riyga.shirpid.presentation.ui.components.BirdTopAppBar
 import by.riyga.shirpid.presentation.utils.AnalyticsUtil
 import by.riyga.shirpid.presentation.utils.LocalNavController
-import by.riyga.shirpid.presentation.utils.updateAppLocale
+import by.riyga.shirpid.presentation.utils.AndroidUtils
 import org.koin.compose.viewmodel.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -62,7 +62,7 @@ fun SettingsScreen(
                 onChooseLanguage = {
                     AnalyticsUtil.logEvent("change_language")
                     viewModel.setLanguage(it)
-                    context.updateAppLocale(it.code)
+                    AndroidUtils.updateAppLocale(context, it.code)
                 }
             )
             Spacer(Modifier.size(16.dp))

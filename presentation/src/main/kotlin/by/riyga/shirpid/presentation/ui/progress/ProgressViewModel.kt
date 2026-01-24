@@ -19,8 +19,8 @@ import by.riyga.shirpid.presentation.utils.SoundClassifier
 import by.riyga.shirpid.presentation.utils.UiEffect
 import by.riyga.shirpid.presentation.utils.UiEvent
 import by.riyga.shirpid.presentation.utils.UiState
-import by.riyga.shirpid.presentation.utils.getAddress
-import by.riyga.shirpid.presentation.utils.getWeek
+import by.riyga.shirpid.presentation.utils.LocationUtils
+import by.riyga.shirpid.presentation.utils.ComposeExtensions
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -127,7 +127,7 @@ class ProgressViewModel(
                     }.toList()),
                     latitude = currentState.options.latitude.toDouble(),
                     longitude = currentState.options.longitude.toDouble(),
-                    locationName = currentState.geoDateInfo?.getAddress(),
+                    locationName = LocationUtils.getAddress(currentState.geoDateInfo),
                     audioFilePath = audioPath,
                     chunkDuration = 1000,
                     timestamp = Clock.System.now().toEpochMilliseconds()
@@ -159,7 +159,7 @@ class ProgressViewModel(
             val useCurrentWeek = appPreferences.useCurrentWeek.first()
 
             val week = if (useCurrentWeek) {
-                getWeek(Clock.System.now())
+                LocationUtils.getWeek(Clock.System.now())
             } else {
                 -1F
             }

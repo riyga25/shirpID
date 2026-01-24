@@ -28,6 +28,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import by.riyga.shirpid.presentation.player.PlayerState
 import by.riyga.shirpid.presentation.utils.AnalyticsUtil
+import by.riyga.shirpid.presentation.utils.DateFormatter
 
 
 @Composable
@@ -91,7 +92,7 @@ fun Player(
             ) {
                 Text(text = fileName ?: "", maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Text(
-                    text = "${formatTime(mediaState.progress)}/${formatTime(mediaState.duration)}",
+                    text = "${DateFormatter.formatTime(mediaState.progress)}/${DateFormatter.formatTime(mediaState.duration)}",
                     fontSize = 12.sp
                 )
             }
@@ -109,16 +110,4 @@ private fun Preview() {
         ),
         fileName = "any name"
     )
-}
-
-private fun formatTime(millis: Long?): String {
-    if (millis == null) return ""
-
-    val timeMin = millis / 60000
-    val timeSec = (millis / 1000) % 60
-
-    val minString = if (timeMin < 10) "0$timeMin" else "$timeMin"
-    val secString = if (timeSec < 10) "0$timeSec" else "$timeSec"
-
-    return "$minString:$secString"
 }
